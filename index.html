@@ -415,265 +415,275 @@
 
     <!-- APP LOGIC -->
     <script>
-        let userData = {};
-        let chartInstance = null;
-        let isEditMode = false; 
+    let userData = {};
+    let chartInstance = null;
+    let isEditMode = false; 
 
-        function showSection(id) {
-            // Hide ALL sections first
-            document.querySelectorAll('section').forEach(el => el.classList.add('hidden-section'));
-            // Show ONLY the requested one
-            document.getElementById(id).classList.remove('hidden-section');
-            window.scrollTo(0,0);
+    // --- ROBUST NAVIGATION FUNCTION ---
+    function goToPage(pageId) {
+        console.log("Navigating to:", pageId);
+        // 1. Hide EVERY section first
+        const sections = document.querySelectorAll('section');
+        sections.forEach(sec => {
+            sec.classList.add('hidden-section');
+        });
+        
+        // 2. Show ONLY the target section
+        const target = document.getElementById(pageId);
+        if (target) {
+            target.classList.remove('hidden-section');
+            window.scrollTo(0, 0);
+        } else {
+            console.error("Page ID not found:", pageId);
         }
+    }
 
-        // --- PAGE 1 TO PAGE 2 TRANSITION ---
-        function handleLogin(e) {
-            e.preventDefault();
-            userData.name = document.getElementById('userName').value;
-            userData.age = parseInt(document.getElementById('userAge').value);
-            userData.mobile = document.getElementById('userMobile').value;
+    // --- PAGE 1 TO PAGE 2 TRANSITION ---
+    function handleLogin(e) {
+        e.preventDefault();
+        
+        // Capture Data
+        userData.name = document.getElementById('userName').value;
+        userData.age = parseInt(document.getElementById('userAge').value);
+        userData.mobile = document.getElementById('userMobile').value;
+        
+        console.log("Login Data Captured:", userData);
+
+        // Reset Edit Mode
+        isEditMode = false; 
+        updateEditModeUI(false);
+        
+        // GO TO PAGE 2
+        goToPage('page-financials');
+    }
+
+    function resetApp() { 
+        goToPage('page-login'); 
+    }
+
+    // --- EDIT MODE LOGIC ---
+    function toggleEditMode() {
+        isEditMode = !isEditMode;
+        updateEditModeUI(isEditMode);
+    }
+
+    function updateEditModeUI(active) {
+        const btnText = document.getElementById('editBtnText');
+        const btnIcon = document.querySelector('#editToggleBtn i');
+        const allInputs = document.querySelectorAll('#page-financials input, #page-financials select');
+
+        if (active) {
+            btnText.innerText = "Done Editing";
+            btnIcon.className = "fa-solid fa-check";
+            document.getElementById('editToggleBtn').classList.replace('bg-white', 'bg-indigo-600');
+            document.getElementById('editToggleBtn').classList.replace('text-gray-700', 'text-white');
+            document.getElementById('editToggleBtn').classList.replace('border-gray-300', 'border-indigo-600');
             
-            // Reset edit mode when entering financials
-            isEditMode = false; 
-            updateEditModeUI(false);
+            allInputs.forEach(input => {
+                input.removeAttribute('readonly');
+                input.classList.remove('bg-gray-100', 'bg-gray-50', 'cursor-not-allowed');
+                input.classList.add('bg-white', 'ring-1', 'ring-indigo-200');
+            });
+        } else {
+            btnText.innerText = "Edit Inputs";
+            btnIcon.className = "fa-solid fa-pen-to-square";
+            document.getElementById('editToggleBtn').classList.replace('bg-indigo-600', 'bg-white');
+            document.getElementById('editToggleBtn').classList.replace('text-white', 'text-gray-700');
+            document.getElementById('editToggleBtn').classList.replace('border-indigo-600', 'border-gray-300');
+
+            allInputs.forEach(input => {
+                input.setAttribute('readonly', 'true');
+                input.classList.add('bg-gray-100', 'bg-gray-50', 'cursor-not-allowed');
+                input.classList.remove('bg-white', 'ring-1', 'ring-indigo-200');
+            });
             
-            // Switch to Page 2
-            showSection('page-financials');
+            ['car', 'home', 'edu', 'marriage', 'retire'].forEach(g => updateMilestoneUI(`ms-${g}`));
         }
+    }
 
-        function resetApp() { 
-            showSection('page-login'); 
-        }
+    function toggleMilestone(id) {
+        const checkbox = document.getElementById(id);
+        checkbox.checked = !checkbox.checked;
+        updateMilestoneUI(id);
+    }
 
-        // --- EDIT MODE LOGIC ---
-        function toggleEditMode() {
-            isEditMode = !isEditMode;
-            updateEditModeUI(isEditMode);
-        }
-
-        function updateEditModeUI(active) {
-            const btnText = document.getElementById('editBtnText');
-            const btnIcon = document.querySelector('#editToggleBtn i');
-            // Only select inputs inside page-financials
-            const allInputs = document.querySelectorAll('#page-financials input, #page-financials select');
-
-            if (active) {
-                btnText.innerText = "Done Editing";
-                btnIcon.className = "fa-solid fa-check";
-                document.getElementById('editToggleBtn').classList.replace('bg-white', 'bg-indigo-600');
-                document.getElementById('editToggleBtn').classList.replace('text-gray-700', 'text-white');
-                document.getElementById('editToggleBtn').classList.replace('border-gray-300', 'border-indigo-600');
-                
-                allInputs.forEach(input => {
-                    input.removeAttribute('readonly');
-                    input.classList.remove('bg-gray-100', 'bg-gray-50', 'cursor-not-allowed');
-                    input.classList.add('bg-white', 'ring-1', 'ring-indigo-200');
-                });
-            } else {
-                btnText.innerText = "Edit Inputs";
-                btnIcon.className = "fa-solid fa-pen-to-square";
-                document.getElementById('editToggleBtn').classList.replace('bg-indigo-600', 'bg-white');
-                document.getElementById('editToggleBtn').classList.replace('text-white', 'text-gray-700');
-                document.getElementById('editToggleBtn').classList.replace('border-indigo-600', 'border-gray-300');
-
-                allInputs.forEach(input => {
-                    input.setAttribute('readonly', 'true');
-                    input.classList.add('bg-gray-100', 'bg-gray-50', 'cursor-not-allowed');
-                    input.classList.remove('bg-white', 'ring-1', 'ring-indigo-200');
-                });
-                
-                // Re-evaluate milestone inputs visibility
-                ['car', 'home', 'edu', 'marriage', 'retire'].forEach(g => updateMilestoneUI(`ms-${g}`));
-            }
-        }
-
-        function toggleMilestone(id) {
-            const checkbox = document.getElementById(id);
-            checkbox.checked = !checkbox.checked;
-            updateMilestoneUI(id);
-        }
-
-        function updateMilestoneUI(id) {
-            const checkbox = document.getElementById(id);
-            const inputsDiv = document.querySelector(`.${id}-inputs`);
-            const checkIcon = checkbox.parentElement.querySelector('.check-icon');
+    function updateMilestoneUI(id) {
+        const checkbox = document.getElementById(id);
+        const inputsDiv = document.querySelector(`.${id}-inputs`);
+        const checkIcon = checkbox.parentElement.querySelector('.check-icon');
+        
+        if (checkbox.checked) {
+            inputsDiv.classList.remove('opacity-0', 'pointer-events-none');
+            checkIcon.classList.remove('opacity-0', 'transform', 'scale-50');
             
-            if (checkbox.checked) {
-                inputsDiv.classList.remove('opacity-0', 'pointer-events-none');
-                checkIcon.classList.remove('opacity-0', 'transform', 'scale-50');
-                
-                const inputs = inputsDiv.querySelectorAll('input');
-                inputs.forEach(inp => {
-                    if(!isEditMode) {
-                        inp.setAttribute('readonly', true);
-                        inp.classList.add('bg-gray-50');
-                        inp.classList.remove('bg-white');
-                    } else {
-                        inp.removeAttribute('readonly');
-                        inp.classList.remove('bg-gray-50');
-                        inp.classList.add('bg-white');
-                    }
-                });
-
-            } else {
-                inputsDiv.classList.add('opacity-0', 'pointer-events-none');
-                checkIcon.classList.add('opacity-0', 'transform', 'scale-50');
-            }
-        }
-
-        function generatePlan() {
-            const income = parseFloat(document.getElementById('monthlyIncome').value) || 0;
-            const expRent = parseFloat(document.getElementById('expRent').value) || 0;
-            const expFood = parseFloat(document.getElementById('expFood').value) || 0;
-            const expMisc = parseFloat(document.getElementById('expMisc').value) || 0;
-            const totalExpenses = expRent + expFood + expMisc;
-            const surplus = income - totalExpenses;
-
-            if(surplus <= 0) { alert("Expenses exceed income! Please edit inputs."); return; }
-
-            const milestones = [];
-            const goalIds = ['car', 'home', 'edu', 'marriage', 'retire'];
-            let activeGoalsCount = 0;
-
-            goalIds.forEach(g => {
-                if(document.getElementById(`ms-${g}`).checked) {
-                    activeGoalsCount++;
-                    milestones.push({ name: g.toUpperCase(), amount: parseFloat(document.getElementById(`val-${g}`).value), years: parseFloat(document.getElementById(`yr-${g}`).value) });
+            const inputs = inputsDiv.querySelectorAll('input');
+            inputs.forEach(inp => {
+                if(!isEditMode) {
+                    inp.setAttribute('readonly', true);
+                    inp.classList.add('bg-gray-50');
+                    inp.classList.remove('bg-white');
+                } else {
+                    inp.removeAttribute('readonly');
+                    inp.classList.remove('bg-gray-50');
+                    inp.classList.add('bg-white');
                 }
             });
+        } else {
+            inputsDiv.classList.add('opacity-0', 'pointer-events-none');
+            checkIcon.classList.add('opacity-0', 'transform', 'scale-50');
+        }
+    }
 
-            userData.income = income;
-            userData.surplus = surplus;
-            userData.milestones = milestones;
-            userData.goalsCount = activeGoalsCount;
-            renderSummary();
-            showSection('page-summary');
+    function generatePlan() {
+        const income = parseFloat(document.getElementById('monthlyIncome').value) || 0;
+        const expRent = parseFloat(document.getElementById('expRent').value) || 0;
+        const expFood = parseFloat(document.getElementById('expFood').value) || 0;
+        const expMisc = parseFloat(document.getElementById('expMisc').value) || 0;
+        const totalExpenses = expRent + expFood + expMisc;
+        const surplus = income - totalExpenses;
+
+        if(surplus <= 0) { alert("Expenses exceed income! Please edit inputs."); return; }
+
+        const milestones = [];
+        const goalIds = ['car', 'home', 'edu', 'marriage', 'retire'];
+        let activeGoalsCount = 0;
+
+        goalIds.forEach(g => {
+            if(document.getElementById(`ms-${g}`).checked) {
+                activeGoalsCount++;
+                milestones.push({ name: g.toUpperCase(), amount: parseFloat(document.getElementById(`val-${g}`).value), years: parseFloat(document.getElementById(`yr-${g}`).value) });
+            }
+        });
+
+        userData.income = income;
+        userData.surplus = surplus;
+        userData.milestones = milestones;
+        userData.goalsCount = activeGoalsCount;
+        renderSummary();
+        goToPage('page-summary');
+    }
+
+    function renderSummary() {
+        document.getElementById('display-name').innerText = userData.name;
+        document.getElementById('display-surplus').innerText = `₹${userData.surplus.toLocaleString()}`;
+        document.getElementById('ai-age').innerText = userData.age;
+        document.getElementById('ai-goals-count').innerText = userData.goalsCount;
+
+        const insuranceAmt = Math.max(userData.surplus * 0.10, 5000);
+        const remaining = userData.surplus - insuranceAmt;
+        let shortTermTotal = 0, longTermTotal = 0;
+        userData.milestones.forEach(m => { if(m.years <= 5) shortTermTotal += m.amount; else longTermTotal += m.amount; });
+        
+        const totalGoalValue = shortTermTotal + longTermTotal;
+        let shortAlloc = 0, longAlloc = 0;
+        if(totalGoalValue > 0) {
+            shortAlloc = remaining * (shortTermTotal / totalGoalValue);
+            longAlloc = remaining * (longTermTotal / totalGoalValue);
+        } else { shortAlloc = remaining * 0.4; longAlloc = remaining * 0.5; }
+
+        document.getElementById('list-important').innerHTML = `<li><strong>Term Plan:</strong> Cover ₹${(userData.income*12*15).toLocaleString()}</li><li><strong>Health:</strong> Family Floater ₹10L</li><li><strong>Cost:</strong> ₹${Math.floor(insuranceAmt)}/mo</li>`;
+        
+        const shortList = document.getElementById('list-short');
+        shortList.innerHTML = userData.milestones.filter(m=>m.years<=5).map(m => `<li><strong>${m.name}:</strong> Target ₹${m.amount.toLocaleString()} in ${m.years}yrs</li>`).join('') || '<li>No short term goals.</li>';
+        if(shortAlloc > 0) shortList.innerHTML += `<li class="font-bold text-indigo-600 mt-2">Invest: ₹${Math.floor(shortAlloc)}/mo</li>`;
+
+        const longList = document.getElementById('list-long');
+        longList.innerHTML = userData.milestones.filter(m=>m.years>5).map(m => `<li><strong>${m.name}:</strong> Target ₹${m.amount.toLocaleString()} in ${m.years}yrs</li>`).join('') || '<li>No long term goals.</li>';
+        if(longAlloc > 0) longList.innerHTML += `<li class="font-bold text-indigo-600 mt-2">Invest: ₹${Math.floor(longAlloc)}/mo</li>`;
+
+        renderChart([insuranceAmt, shortAlloc, longAlloc]);
+    }
+
+    function renderChart(amounts) {
+        const ctx = document.getElementById('wealthChart').getContext('2d');
+        if(chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+             {
+                labels: ['Insurance', 'Short Term Goals', 'Long Term Wealth'],
+                datasets: [{  amounts, backgroundColor: ['#EF4444', '#F59E0B', '#10B981'], borderWidth: 0 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+
+    async function submitFinal() {
+        const btn = document.getElementById('submitBtn');
+        const loader = document.getElementById('loader');
+        const txt = document.getElementById('btnText');
+        
+        btn.disabled = true;
+        loader.style.display = 'block';
+        txt.innerText = 'Saving...';
+
+        userData.consult = document.getElementById('consultCheck').checked;
+        userData.date = new Date().toLocaleDateString();
+
+        if (typeof window.submitToFirebase !== 'function') {
+            alert("Firebase not initialized. Check console.");
+            btn.disabled = false;
+            loader.style.display = 'none';
+            txt.innerText = 'Save & Submit Plan';
+            return;
         }
 
-        function renderSummary() {
-            document.getElementById('display-name').innerText = userData.name;
-            document.getElementById('display-surplus').innerText = `₹${userData.surplus.toLocaleString()}`;
-            document.getElementById('ai-age').innerText = userData.age;
-            document.getElementById('ai-goals-count').innerText = userData.goalsCount;
+        const success = await window.submitToFirebase(userData);
 
-            const insuranceAmt = Math.max(userData.surplus * 0.10, 5000);
-            const remaining = userData.surplus - insuranceAmt;
-            let shortTermTotal = 0, longTermTotal = 0;
-            userData.milestones.forEach(m => { if(m.years <= 5) shortTermTotal += m.amount; else longTermTotal += m.amount; });
-            
-            const totalGoalValue = shortTermTotal + longTermTotal;
-            let shortAlloc = 0, longAlloc = 0;
-            if(totalGoalValue > 0) {
-                shortAlloc = remaining * (shortTermTotal / totalGoalValue);
-                longAlloc = remaining * (longTermTotal / totalGoalValue);
-            } else { shortAlloc = remaining * 0.4; longAlloc = remaining * 0.5; }
-
-            document.getElementById('list-important').innerHTML = `<li><strong>Term Plan:</strong> Cover ₹${(userData.income*12*15).toLocaleString()}</li><li><strong>Health:</strong> Family Floater ₹10L</li><li><strong>Cost:</strong> ₹${Math.floor(insuranceAmt)}/mo</li>`;
-            
-            const shortList = document.getElementById('list-short');
-            shortList.innerHTML = userData.milestones.filter(m=>m.years<=5).map(m => `<li><strong>${m.name}:</strong> Target ₹${m.amount.toLocaleString()} in ${m.years}yrs</li>`).join('') || '<li>No short term goals.</li>';
-            if(shortAlloc > 0) shortList.innerHTML += `<li class="font-bold text-indigo-600 mt-2">Invest: ₹${Math.floor(shortAlloc)}/mo</li>`;
-
-            const longList = document.getElementById('list-long');
-            longList.innerHTML = userData.milestones.filter(m=>m.years>5).map(m => `<li><strong>${m.name}:</strong> Target ₹${m.amount.toLocaleString()} in ${m.years}yrs</li>`).join('') || '<li>No long term goals.</li>';
-            if(longAlloc > 0) longList.innerHTML += `<li class="font-bold text-indigo-600 mt-2">Invest: ₹${Math.floor(longAlloc)}/mo</li>`;
-
-            renderChart([insuranceAmt, shortAlloc, longAlloc]);
+        if(success) {
+            alert("Plan Saved to Cloud! Our advisors will contact you.");
+            resetApp();
+        } else {
+            btn.disabled = false;
+            loader.style.display = 'none';
+            txt.innerText = 'Save & Submit Plan';
+            alert("Failed to save. Check your Firebase configuration in the code.");
         }
+    }
 
-        function renderChart(amounts) {
-            const ctx = document.getElementById('wealthChart').getContext('2d');
-            if(chartInstance) chartInstance.destroy();
-            chartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                 {
-                    labels: ['Insurance', 'Short Term Goals', 'Long Term Wealth'],
-                    datasets: [{  amounts, backgroundColor: ['#EF4444', '#F59E0B', '#10B981'], borderWidth: 0 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    async function toggleAdmin() {
+        const pass = prompt("Admin Password (admin):");
+        if(pass === 'admin') showAdmin();
+    }
+
+    async function showAdmin() {
+        const tbody = document.getElementById('admin-table-body');
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Loading data from cloud...</td></tr>';
+        goToPage('admin-page');
+
+        const dbData = await window.fetchFromFirebase();
+        tbody.innerHTML = '';
+
+        if(dbData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No data found in database.</td></tr>';
+        } else {
+            dbData.forEach(row => {
+                const goals = row.milestones ? row.milestones.map(m=>m.name).join(', ') : 'None';
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-5 py-4 font-bold">${row.name}</td>
+                        <td class="px-5 py-4">${row.age}</td>
+                        <td class="px-5 py-4">${row.mobile}</td>
+                        <td class="px-5 py-4">₹${row.income}</td>
+                        <td class="px-5 py-4 text-xs text-gray-500">${goals}</td>
+                        <td class="px-5 py-4">${row.consult ? '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Yes</span>' : 'No'}</td>
+                        <td class="px-5 py-4 text-xs">${row.date}</td>
+                    </tr>
+                `;
             });
         }
+    }
 
-        async function submitFinal() {
-            const btn = document.getElementById('submitBtn');
-            const loader = document.getElementById('loader');
-            const txt = document.getElementById('btnText');
-            
-            btn.disabled = true;
-            loader.style.display = 'block';
-            txt.innerText = 'Saving...';
-
-            userData.consult = document.getElementById('consultCheck').checked;
-            userData.date = new Date().toLocaleDateString();
-
-            if (typeof window.submitToFirebase !== 'function') {
-                alert("Firebase not initialized. Check console.");
-                btn.disabled = false;
-                loader.style.display = 'none';
-                txt.innerText = 'Save & Submit Plan';
-                return;
-            }
-
-            const success = await window.submitToFirebase(userData);
-
-            if(success) {
-                alert("Plan Saved to Cloud! Our advisors will contact you.");
-                resetApp();
-            } else {
-                btn.disabled = false;
-                loader.style.display = 'none';
-                txt.innerText = 'Save & Submit Plan';
-                alert("Failed to save. Check your Firebase configuration in the code.");
-            }
-        }
-
-        async function toggleAdmin() {
-            const pass = prompt("Admin Password (admin):");
-            if(pass === 'admin') showAdmin();
-        }
-
-        async function showAdmin() {
-            const tbody = document.getElementById('admin-table-body');
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Loading data from cloud...</td></tr>';
-            showSection('admin-page');
-
-            const dbData = await window.fetchFromFirebase();
-            tbody.innerHTML = '';
-
-            if(dbData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No data found in database.</td></tr>';
-            } else {
-                dbData.forEach(row => {
-                    const goals = row.milestones ? row.milestones.map(m=>m.name).join(', ') : 'None';
-                    tbody.innerHTML += `
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="px-5 py-4 font-bold">${row.name}</td>
-                            <td class="px-5 py-4">${row.age}</td>
-                            <td class="px-5 py-4">${row.mobile}</td>
-                            <td class="px-5 py-4">₹${row.income}</td>
-                            <td class="px-5 py-4 text-xs text-gray-500">${goals}</td>
-                            <td class="px-5 py-4">${row.consult ? '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Yes</span>' : 'No'}</td>
-                            <td class="px-5 py-4 text-xs">${row.date}</td>
-                        </tr>
-                    `;
-                });
-            }
-        }
-
-        async function downloadCSV() {
-            const dbData = await window.fetchFromFirebase();
-            if(!dbData.length) return alert("No data");
-            let csv = "Name,Age,Mobile,Income,Goals,Consult,Date\n";
-            dbData.forEach(r => {
-                const goals = r.milestones ? r.milestones.map(m=>m.name).join(';') : 'None';
-                csv += `${r.name},${r.age},${r.mobile},${r.income},"${goals}",${r.consult},${r.date}\n`;
-            });
-            const link = document.createElement("a");
-            link.href = encodeURI("text/csv;charset=utf-8," + csv);
-            link.download = "unloan_cloud_data.csv";
-            link.click();
-        }
-    </script>
-</body>
-</html>
+    async function downloadCSV() {
+        const dbData = await window.fetchFromFirebase();
+        if(!dbData.length) return alert("No data");
+        let csv = "Name,Age,Mobile,Income,Goals,Consult,Date\n";
+        dbData.forEach(r => {
+            const goals = r.milestones ? r.milestones.map(m=>m.name).join(';') : 'None';
+            csv += `${r.name},${r.age},${r.mobile},${r.income},"${goals}",${r.consult},${r.date}\n`;
+        });
+        const link = document.createElement("a");
+        link.href = encodeURI("text/csv;charset=utf-8," + csv);
+        link.download = "unloan_cloud_data.csv";
+        link.click();
+    }
+</script>
