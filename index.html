@@ -11,6 +11,28 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     body { font-family: 'Poppins', sans-serif; }
+    :root {
+      --indigo-glow: rgba(79, 70, 229, 0.25);
+      --pink-glow: rgba(236, 72, 153, 0.22);
+    }
+    .blob-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+    .blob {
+      position: absolute;
+      width: 360px;
+      height: 360px;
+      border-radius: 9999px;
+      filter: blur(60px);
+      opacity: 0.35;
+    }
+    .blob.one { top: -80px; left: -80px; background: var(--indigo-glow); }
+    .blob.two { top: -100px; right: -120px; background: var(--pink-glow); }
+    .blob.three { bottom: -120px; left: 40%; background: rgba(16, 185, 129, 0.22); }
     .panel {
       background: rgba(255, 255, 255, 0.95);
       border: 1px solid rgba(229, 231, 235, 0.8);
@@ -18,13 +40,33 @@
       border-radius: 1rem;
       backdrop-filter: blur(8px);
     }
+    .gradient-text {
+      background: linear-gradient(90deg, #4338ca 0%, #ec4899 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .pill {
+      background: linear-gradient(90deg, rgba(79,70,229,0.10) 0%, rgba(236,72,153,0.10) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    }
     .hidden-page { display: none !important; }
   </style>
 </head>
 <body class="bg-gradient-to-br from-indigo-50 via-white to-fuchsia-50 text-gray-800 min-h-screen">
+  <div class="blob-bg">
+    <div class="blob one"></div>
+    <div class="blob two"></div>
+    <div class="blob three"></div>
+  </div>
   <header class="sticky top-0 z-20 border-b border-gray-100 bg-white/80 backdrop-blur">
     <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-      <h1 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-700 to-pink-600 bg-clip-text text-transparent cursor-pointer" onclick="resetApp()">unloan</h1>
+      <h1 class="text-2xl md:text-3xl font-bold cursor-pointer flex items-center gap-2" onclick="resetApp()">
+        <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-pink-500 text-white flex items-center justify-center shadow-lg">
+          ₹
+        </span>
+        <span class="gradient-text">unloan</span>
+      </h1>
       <div class="flex items-center gap-4">
         <button onclick="showRecords()" class="text-sm font-semibold text-indigo-700 hover:text-pink-600">View Saved Plans</button>
         <button onclick="goTo('page-admin-login')" class="text-sm font-semibold text-gray-700 hover:text-indigo-700">Admin Login</button>
@@ -112,7 +154,18 @@
           <h3 class="font-semibold mb-4">Wealth Spread Graph</h3>
           <div class="h-72"><canvas id="allocationChart"></canvas></div>
         </div>
-        <div class="panel p-6">
+        <div class="panel p-6 space-y-4">
+          <div class="pill rounded-xl p-4">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Financial Health Score</p>
+            <div class="flex items-end justify-between mt-1">
+              <p id="healthScoreValue" class="text-4xl font-extrabold text-indigo-700">0</p>
+              <p class="text-sm text-gray-500 mb-1">/100</p>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+              <div id="healthScoreBar" class="h-2.5 rounded-full bg-gradient-to-r from-rose-500 via-amber-500 to-emerald-500" style="width:0%"></div>
+            </div>
+            <p id="healthScoreNote" class="text-xs text-gray-600 mt-2">Score generated from savings ratio, protection and stability.</p>
+          </div>
           <h3 class="font-semibold mb-3">AI-style Insight Notes</h3>
           <ul id="aiNotes" class="text-sm space-y-2"></ul>
         </div>
@@ -244,7 +297,7 @@
 
   <script>
     const ADMIN_USERNAME = 'admin';
-    const ADMIN_PASSWORD = 'admin123';
+    const ADMIN_PASSWORD = 'unloan1083';
 
     const milestoneDefs = [
       { key: 'health', name: 'Health Emergency Fund', avg: 300000, years: 2 },
@@ -260,6 +313,7 @@
 
     function inr(n) { return `₹${Math.round(n).toLocaleString('en-IN')}`; }
     function normalize(v) { return currentMode === 'yearly' ? (Number(v || 0) / 12) : Number(v || 0); }
+    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
 
     function goTo(id) {
       document.querySelectorAll('main section').forEach((s) => s.classList.add('hidden-page'));
@@ -367,8 +421,12 @@
     function renderSummary(shortGoals, longGoals) {
       const f = user.financial;
       const insuranceCover = f.incomeMonthly * 12 * 12;
+      const score = calculateHealthScore(f, insuranceCover);
       document.getElementById('sName').textContent = user.name;
       document.getElementById('sSurplus').textContent = inr(f.surplusMonthly);
+      document.getElementById('healthScoreValue').textContent = score.total;
+      document.getElementById('healthScoreBar').style.width = `${score.total}%`;
+      document.getElementById('healthScoreNote').textContent = score.note;
 
       document.getElementById('importantList').innerHTML = `
         <li>Term cover target: <b>${inr(insuranceCover)}</b> (~12x annual income).</li>
@@ -395,6 +453,26 @@
       ].map((r) => `<li>${r}</li>`).join('');
 
       renderChart(f.allocation);
+    }
+
+    function calculateHealthScore(f, insuranceCoverTarget) {
+      const monthlyExpense = f.expensesMonthly.rent + f.expensesMonthly.food + f.expensesMonthly.misc;
+      const savingsRatio = f.incomeMonthly > 0 ? (f.surplusMonthly / f.incomeMonthly) : 0;
+      const protectionRatio = insuranceCoverTarget > 0 ? ((f.allocation.insuranceAlloc * 12) / insuranceCoverTarget) : 0;
+      const runwayMonths = monthlyExpense > 0 ? (f.surplusMonthly / monthlyExpense) * 6 : 0;
+
+      const savingsScore = clamp(Math.round((savingsRatio / 0.30) * 40), 0, 40);
+      const protectionScore = clamp(Math.round((protectionRatio / 0.08) * 30), 0, 30);
+      const stabilityScore = clamp(Math.round((runwayMonths / 6) * 30), 0, 30);
+      const total = clamp(savingsScore + protectionScore + stabilityScore, 0, 100);
+
+      let note = 'Keep building consistency in savings and protection.';
+      if (total >= 80) note = 'Excellent financial momentum — maintain diversification discipline.';
+      else if (total >= 60) note = 'Good base — improve protection and goal funding cadence.';
+      else if (total >= 40) note = 'Moderate health — increase surplus and emergency preparedness.';
+      else note = 'At-risk profile — prioritize insurance and spending optimization first.';
+
+      return { total, note };
     }
 
     function renderChart(a) {
