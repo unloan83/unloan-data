@@ -1,689 +1,1162 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>unloan | Plan Your Freedom</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <style>
-        body { font-family: 'Poppins', sans-serif; }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(12px);
-            border-radius: 24px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-        }
-        
-        /* CRITICAL FIX: Force hide with !important */
-        .hidden-section { display: none !important; }
-        
-        /* Custom Checkbox Styling */
-        .custom-checkbox:checked + div { border-color: #4F46E5; background-color: #EEF2FF; }
-        .custom-checkbox:checked + div .check-icon { opacity: 1; transform: scale(1); }
-        
-        /* Scrollable Container for Page 2 */
-        .scroll-container {
-            max-height: calc(100vh - 220px);
-            overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: #cbd5e1 transparent;
-        }
-        .scroll-container::-webkit-scrollbar { width: 6px; }
-        .scroll-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
-
-        .fade-in { animation: fadeIn 0.5s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Input States */
-        input[readonly] { background-color: #f3f4f6; color: #6b7280; cursor: not-allowed; }
-        input:not([readonly]) { background-color: #ffffff; border-color: #4F46E5; ring: 2px; }
-        
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #4F46E5; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; display: none; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
-</head>
-<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col relative overflow-hidden">
-
-    <!-- Background Blobs -->
-    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-        <div class="absolute top-[-10%] right-[-10%] w-96 h-96 bg-yellow-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-        <div class="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
-    </div>
-
-    <!-- Navbar -->
-    <nav class="bg-white/80 backdrop-blur-md shadow-sm p-4 sticky top-0 z-50 border-b border-gray-100">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <h1 class="text-3xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-600 cursor-pointer" onclick="resetApp()">
-                <i class="fa-solid fa-rocket mr-2"></i>unloan
-            </h1>
-            <div class="space-x-4">
-                <button onclick="showAdmin()" class="text-sm font-medium text-gray-500 hover:text-indigo-600 transition"><i class="fa-solid fa-user-shield mr-1"></i> Admin</button>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main Content Area -->
-    <main class="flex-grow p-4 md:p-6 max-w-7xl mx-auto w-full flex items-center justify-center min-h-[80vh]">
-        
-        <!-- ================= PAGE 1: LOGIN (VISIBLE BY DEFAULT) ================= -->
-        <section id="page-login" class="w-full max-w-md glass-panel p-8 fade-in">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome</h2>
-                <p class="text-gray-500">Let's get started with your basic details.</p>
-            </div>
-            <form onsubmit="handleLogin(event)" class="space-y-5">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Full Name</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-user absolute left-3 top-3.5 text-gray-400"></i>
-                        <input type="text" id="userName" required class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition" placeholder="e.g. Rahul Sharma">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Age</label>
-                        <div class="relative">
-                            <i class="fa-solid fa-cake-candles absolute left-3 top-3.5 text-gray-400"></i>
-                            <input type="number" id="userAge" required class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition" placeholder="25">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Mobile</label>
-                        <div class="relative">
-                            <i class="fa-solid fa-phone absolute left-3 top-3.5 text-gray-400"></i>
-                            <input type="tel" id="userMobile" required class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition" placeholder="98765...">
-                        </div>
-                    </div>
-                </div>
-                <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-pink-600 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition transform duration-200 mt-4">
-                    Next Step <i class="fa-solid fa-arrow-right ml-2"></i>
-                </button>
-            </form>
-        </section>
-
-        <!-- ================= PAGE 2: FINANCIALS (HIDDEN BY DEFAULT) ================= -->
-        <section id="page-financials" class="hidden-section w-full max-w-5xl fade-in flex flex-col h-[calc(100vh-100px)]">
-            
-            <!-- Header & Edit Toggle -->
-            <div class="flex flex-col md:flex-row justify-between items-center mb-4 shrink-0">
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-800">Financial Details</h2>
-                    <p class="text-sm text-gray-500">Enter your income, expenses, and goals.</p>
-                </div>
-                <button id="editToggleBtn" onclick="toggleEditMode()" class="mt-4 md:mt-0 flex items-center space-x-2 bg-white border border-gray-300 text-gray-700 px-5 py-2 rounded-full hover:bg-gray-50 transition shadow-sm">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                    <span id="editBtnText">Edit Inputs</span>
-                </button>
-            </div>
-
-            <!-- Scrollable Content Area -->
-            <div class="scroll-container glass-panel p-6 mb-4 flex-grow">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    
-                    <!-- Left Column: Income & Expenses -->
-                    <div class="lg:col-span-4 space-y-6">
-                        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-                            <h3 class="font-bold text-lg text-indigo-700 mb-4 flex items-center"><i class="fa-solid fa-wallet mr-2"></i> Cashflow</h3>
-                            
-                            <div class="mb-4">
-                                <label class="block text-xs font-semibold text-gray-500 mb-1">Monthly Income (₹)</label>
-                                <input type="number" id="monthlyIncome" readonly class="w-full p-3 bg-gray-100 border border-gray-200 rounded-lg outline-none font-bold text-gray-700 transition-colors" placeholder="e.g. 80000">
-                            </div>
-
-                            <div class="mb-4">
-                                <label class="block text-xs font-semibold text-gray-500 mb-1">Marital Status</label>
-                                <select id="maritalStatus" readonly class="w-full p-3 bg-gray-100 border border-gray-200 rounded-lg outline-none transition-colors">
-                                    <option value="single">Single</option>
-                                    <option value="married">Married</option>
-                                </select>
-                            </div>
-
-                            <div class="border-t pt-4 mt-4">
-                                <label class="block text-xs font-semibold text-gray-500 mb-2">Monthly Expenses</label>
-                                <div class="space-y-3">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm text-gray-600">Rent/EMI</span>
-                                        <input type="number" id="expRent" readonly placeholder="0" class="w-24 p-1 text-right border-b border-gray-300 bg-transparent outline-none transition-colors">
-                                    </div>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm text-gray-600">Food/Bills</span>
-                                        <input type="number" id="expFood" readonly placeholder="0" class="w-24 p-1 text-right border-b border-gray-300 bg-transparent outline-none transition-colors">
-                                    </div>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm text-gray-600">Lifestyle</span>
-                                        <input type="number" id="expMisc" readonly placeholder="0" class="w-24 p-1 text-right border-b border-gray-300 bg-transparent outline-none transition-colors">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Right Column: Milestones -->
-                    <div class="lg:col-span-8">
-                        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm h-full">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="font-bold text-lg text-pink-600 flex items-center"><i class="fa-solid fa-flag-checkered mr-2"></i> Future Goals</h3>
-                                <span class="text-xs bg-pink-50 text-pink-600 px-2 py-1 rounded border border-pink-100">Select & Edit Targets</span>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <!-- Car -->
-                                <div class="group relative border border-gray-200 rounded-xl p-4 hover:shadow-md transition cursor-pointer" onclick="toggleMilestone('ms-car')">
-                                    <input type="checkbox" id="ms-car" class="custom-checkbox hidden" onchange="updateMilestoneUI('ms-car')">
-                                    <div class="flex items-start space-x-3">
-                                        <div class="check-icon w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs transition-all duration-200 opacity-0 transform scale-50"><i class="fa-solid fa-check"></i></div>
-                                        <div class="flex-grow">
-                                            <h4 class="font-bold text-gray-800">New Car</h4>
-                                            <p class="text-xs text-gray-500 mb-2">Avg Target: ₹8L</p>
-                                            <div class="grid grid-cols-2 gap-2 opacity-0 pointer-events-none transition-opacity duration-300 ms-car-inputs">
-                                                <div><label class="text-[10px] uppercase text-gray-400">Amount (₹)</label><input type="number" id="val-car" value="800000" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
-                                                <div><label class="text-[10px] uppercase text-gray-400">In (Years)</label><input type="number" id="yr-car" value="3" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Home -->
-                                <div class="group relative border border-gray-200 rounded-xl p-4 hover:shadow-md transition cursor-pointer" onclick="toggleMilestone('ms-home')">
-                                    <input type="checkbox" id="ms-home" class="custom-checkbox hidden" onchange="updateMilestoneUI('ms-home')">
-                                    <div class="flex items-start space-x-3">
-                                        <div class="check-icon w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs transition-all duration-200 opacity-0 transform scale-50"><i class="fa-solid fa-check"></i></div>
-                                        <div class="flex-grow">
-                                            <h4 class="font-bold text-gray-800">Home Downpayment</h4>
-                                            <p class="text-xs text-gray-500 mb-2">Avg Target: ₹20L</p>
-                                            <div class="grid grid-cols-2 gap-2 opacity-0 pointer-events-none transition-opacity duration-300 ms-home-inputs">
-                                                <div><label class="text-[10px] uppercase text-gray-400">Amount (₹)</label><input type="number" id="val-home" value="2000000" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
-                                                <div><label class="text-[10px] uppercase text-gray-400">In (Years)</label><input type="number" id="yr-home" value="7" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Education -->
-                                <div class="group relative border border-gray-200 rounded-xl p-4 hover:shadow-md transition cursor-pointer" onclick="toggleMilestone('ms-edu')">
-                                    <input type="checkbox" id="ms-edu" class="custom-checkbox hidden" onchange="updateMilestoneUI('ms-edu')">
-                                    <div class="flex items-start space-x-3">
-                                        <div class="check-icon w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs transition-all duration-200 opacity-0 transform scale-50"><i class="fa-solid fa-check"></i></div>
-                                        <div class="flex-grow">
-                                            <h4 class="font-bold text-gray-800">Child's Education</h4>
-                                            <p class="text-xs text-gray-500 mb-2">Avg Target: ₹15L</p>
-                                            <div class="grid grid-cols-2 gap-2 opacity-0 pointer-events-none transition-opacity duration-300 ms-edu-inputs">
-                                                <div><label class="text-[10px] uppercase text-gray-400">Amount (₹)</label><input type="number" id="val-edu" value="1500000" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
-                                                <div><label class="text-[10px] uppercase text-gray-400">In (Years)</label><input type="number" id="yr-edu" value="15" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Marriage -->
-                                <div class="group relative border border-gray-200 rounded-xl p-4 hover:shadow-md transition cursor-pointer" onclick="toggleMilestone('ms-marriage')">
-                                    <input type="checkbox" id="ms-marriage" class="custom-checkbox hidden" onchange="updateMilestoneUI('ms-marriage')">
-                                    <div class="flex items-start space-x-3">
-                                        <div class="check-icon w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs transition-all duration-200 opacity-0 transform scale-50"><i class="fa-solid fa-check"></i></div>
-                                        <div class="flex-grow">
-                                            <h4 class="font-bold text-gray-800">Wedding Fund</h4>
-                                            <p class="text-xs text-gray-500 mb-2">Avg Target: ₹10L</p>
-                                            <div class="grid grid-cols-2 gap-2 opacity-0 pointer-events-none transition-opacity duration-300 ms-marriage-inputs">
-                                                <div><label class="text-[10px] uppercase text-gray-400">Amount (₹)</label><input type="number" id="val-marriage" value="1000000" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
-                                                <div><label class="text-[10px] uppercase text-gray-400">In (Years)</label><input type="number" id="yr-marriage" value="5" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Retirement -->
-                                <div class="group relative border border-gray-200 rounded-xl p-4 hover:shadow-md transition cursor-pointer" onclick="toggleMilestone('ms-retire')">
-                                    <input type="checkbox" id="ms-retire" class="custom-checkbox hidden" onchange="updateMilestoneUI('ms-retire')">
-                                    <div class="flex items-start space-x-3">
-                                        <div class="check-icon w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs transition-all duration-200 opacity-0 transform scale-50"><i class="fa-solid fa-check"></i></div>
-                                        <div class="flex-grow">
-                                            <h4 class="font-bold text-gray-800">Retirement Corpus</h4>
-                                            <p class="text-xs text-gray-500 mb-2">Avg Target: ₹2Cr</p>
-                                            <div class="grid grid-cols-2 gap-2 opacity-0 pointer-events-none transition-opacity duration-300 ms-retire-inputs">
-                                                <div><label class="text-[10px] uppercase text-gray-400">Amount (₹)</label><input type="number" id="val-retire" value="20000000" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
-                                                <div><label class="text-[10px] uppercase text-gray-400">In (Years)</label><input type="number" id="yr-retire" value="25" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Fixed Bottom Action Bar -->
-            <div class="shrink-0 pt-4 pb-2">
-                <button onclick="generatePlan()" class="w-full bg-gray-900 text-white text-lg py-4 rounded-xl font-bold hover:bg-black transition shadow-2xl transform hover:-translate-y-1 flex justify-center items-center">
-                    Generate AI Plan <i class="fa-solid fa-wand-magic-sparkles ml-2"></i>
-                </button>
-            </div>
-        </section>
-
-        <!-- ================= PAGE 3: SUMMARY (HIDDEN BY DEFAULT) ================= -->
-        <section id="page-summary" class="hidden-section w-full max-w-6xl fade-in space-y-8 pb-10">
-            <div class="glass-panel p-8 flex flex-col md:flex-row justify-between items-center bg-gradient-to-r from-indigo-50 to-white border-l-8 border-indigo-600">
-                <div>
-                    <h2 class="text-3xl font-bold text-gray-800">Hi, <span id="display-name" class="text-indigo-600"></span>!</h2>
-                    <p class="text-gray-500 mt-1">Based on your goals, here is your wealth roadmap.</p>
-                </div>
-                <div class="mt-6 md:mt-0 text-center md:text-right bg-white px-6 py-3 rounded-xl shadow-sm border border-gray-100">
-                    <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Monthly Surplus Available</p>
-                    <p class="text-4xl font-extrabold text-green-600" id="display-surplus">₹0</p>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-2 glass-panel p-6">
-                    <h3 class="font-bold text-lg mb-6 text-gray-700">Recommended Asset Allocation</h3>
-                    <div class="relative h-72 w-full flex justify-center">
-                        <canvas id="wealthChart"></canvas>
-                    </div>
-                </div>
-                <div class="glass-panel p-6 space-y-4">
-                    <h3 class="font-bold text-lg text-gray-700"><i class="fa-solid fa-brain text-purple-500 mr-2"></i>AI Insights</h3>
-                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                        <h4 class="font-bold text-blue-800 text-sm">Safety First</h4>
-                        <p class="text-xs text-blue-600 mt-1">With your age (<span id="ai-age"></span>), term insurance is critical. Aim for 15x income cover.</p>
-                    </div>
-                    <div class="bg-orange-50 p-4 rounded-xl border border-orange-100">
-                        <h4 class="font-bold text-orange-800 text-sm">Goal Alert</h4>
-                        <p class="text-xs text-orange-600 mt-1">You have selected <span id="ai-goals-count"></span> major milestones. Starting SIPs now reduces loan dependence by 80%.</p>
-                    </div>
-                    <div class="bg-green-50 p-4 rounded-xl border border-green-100">
-                        <h4 class="font-bold text-green-800 text-sm">Wealth Builder</h4>
-                        <p class="text-xs text-green-600 mt-1">Equity exposure is recommended for goals > 7 years to beat 6% inflation.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="glass-panel p-6 border-t-4 border-red-500 hover:shadow-lg transition">
-                    <div class="flex items-center mb-4"><div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-500 mr-3"><i class="fa-solid fa-shield-heart"></i></div><h3 class="font-bold text-lg">Protection</h3></div>
-                    <ul id="list-important" class="space-y-3 text-sm text-gray-600"></ul>
-                </div>
-                <div class="glass-panel p-6 border-t-4 border-yellow-500 hover:shadow-lg transition">
-                    <div class="flex items-center mb-4"><div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 mr-3"><i class="fa-solid fa-clock"></i></div><h3 class="font-bold text-lg">Short Term Goals</h3></div>
-                    <ul id="list-short" class="space-y-3 text-sm text-gray-600"></ul>
-                </div>
-                <div class="glass-panel p-6 border-t-4 border-green-500 hover:shadow-lg transition">
-                    <div class="flex items-center mb-4"><div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-3"><i class="fa-solid fa-seedling"></i></div><h3 class="font-bold text-lg">Long Term Wealth</h3></div>
-                    <ul id="list-long" class="space-y-3 text-sm text-gray-600"></ul>
-                </div>
-            </div>
-            <div class="glass-panel p-8 text-center bg-gray-900 text-white rounded-2xl shadow-2xl">
-                <div class="flex items-center justify-center space-x-4 mb-6">
-                    <input type="checkbox" id="consultCheck" class="w-6 h-6 accent-pink-500 cursor-pointer">
-                    <label for="consultCheck" class="text-xl font-medium cursor-pointer">Yes, help me reduce loan dependence. Discuss next steps.</label>
-                </div>
-                <button onclick="submitFinal()" id="submitBtn" class="bg-gradient-to-r from-pink-500 to-indigo-600 text-white font-bold py-3 px-12 rounded-full hover:opacity-90 transition shadow-lg flex items-center justify-center">
-                    <span id="btnText">Save & Submit Plan</span>
-                    <div id="loader" class="loader ml-2"></div>
-                </button>
-            </div>
-        </section>
-
-        <!-- ADMIN PAGE -->
-        <section id="admin-page" class="hidden-section w-full max-w-6xl fade-in">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Admin Dashboard (Live Data)</h2>
-                <button onclick="downloadCSV()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow flex items-center transition">
-                    <i class="fa-solid fa-file-csv mr-2"></i> Download CSV
-                </button>
-            </div>
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                <table class="min-w-full leading-normal">
-                    <thead>
-                        <tr class="bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            <th class="px-5 py-3">Name</th>
-                            <th class="px-5 py-3">Age</th>
-                            <th class="px-5 py-3">Mobile</th>
-                            <th class="px-5 py-3">Income</th>
-                            <th class="px-5 py-3">Goals Selected</th>
-                            <th class="px-5 py-3">Consult?</th>
-                            <th class="px-5 py-3">Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-table-body" class="text-sm text-gray-700"></tbody>
-                </table>
-            </div>
-            <button onclick="toggleAdmin()" class="mt-6 text-indigo-600 font-semibold hover:underline">← Back to App</button>
-        </section>
-
-    </main>
-
-    <footer class="bg-white border-t border-gray-200 py-6 text-center text-gray-500 text-sm">
-        <p>&copy; 2023 unloan. Designed for Financial Freedom.</p>
-    </footer>
-
-    <!-- FIREBASE SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-
-        // ⚠️ REPLACE WITH YOUR ACTUAL FIREBASE CONFIG ️
-        const firebaseConfig = {
-            const firebaseConfig = {
-            apiKey: "AIzaSyB2X_QYodQDt-huUpHDxuDg7K2ADPuNnSk",
-            authDomain: "unloan-6ee77.firebaseapp.com",
-            projectId: "unloan-6ee77",
-            storageBucket: "unloan-6ee77.firebasestorage.app",
-            messagingSenderId: "1094363896252",
-            appId: "1:1094363896252:web:f8c5cf52b3f270bfdcf3b9"
-        };
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        async function submitData(userData) {
-            try {
-                await addDoc(collection(db, "users"), userData);
-                return true;
-            } catch (e) {
-                console.error("Error adding document: ", e);
-                return false;
-            }
-        }
-
-        async function fetchData() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "users"));
-                const data = [];
-                querySnapshot.forEach((doc) => {
-                    data.push({ id: doc.id, ...doc.data() });
-                });
-                return data;
-            } catch (e) {
-                console.error("Error fetching documents: ", e);
-                return [];
-            }
-        }
-
-        window.submitToFirebase = submitData;
-        window.fetchFromFirebase = fetchData;
-    </script>
-
-    <!-- APP LOGIC -->
-    <script>
-    let userData = {};
-    let chartInstance = null;
-    let isEditMode = false; 
-
-    // --- ROBUST NAVIGATION FUNCTION ---
-    function goToPage(pageId) {
-        console.log("Navigating to:", pageId);
-        // 1. Hide EVERY section first
-        const sections = document.querySelectorAll('section');
-        sections.forEach(sec => {
-            sec.classList.add('hidden-section');
-        });
-        
-        // 2. Show ONLY the target section
-        const target = document.getElementById(pageId);
-        if (target) {
-            target.classList.remove('hidden-section');
-            window.scrollTo(0, 0);
-        } else {
-            console.error("Page ID not found:", pageId);
-        }
-    }
-
-    // --- PAGE 1 TO PAGE 2 TRANSITION ---
-    function handleLogin(e) {
-        e.preventDefault();
-        
-        // Capture Data
-        userData.name = document.getElementById('userName').value;
-        userData.age = parseInt(document.getElementById('userAge').value);
-        userData.mobile = document.getElementById('userMobile').value;
-        
-        console.log("Login Data Captured:", userData);
-
-        // Reset Edit Mode
-        isEditMode = false; 
-        updateEditModeUI(false);
-        
-        // GO TO PAGE 2
-        goToPage('page-financials');
-    }
-
-    function resetApp() { 
-        goToPage('page-login'); 
-    }
-
-    // --- EDIT MODE LOGIC ---
-    function toggleEditMode() {
-        isEditMode = !isEditMode;
-        updateEditModeUI(isEditMode);
-    }
-
-    function updateEditModeUI(active) {
-        const btnText = document.getElementById('editBtnText');
-        const btnIcon = document.querySelector('#editToggleBtn i');
-        const allInputs = document.querySelectorAll('#page-financials input, #page-financials select');
-
-        if (active) {
-            btnText.innerText = "Done Editing";
-            btnIcon.className = "fa-solid fa-check";
-            document.getElementById('editToggleBtn').classList.replace('bg-white', 'bg-indigo-600');
-            document.getElementById('editToggleBtn').classList.replace('text-gray-700', 'text-white');
-            document.getElementById('editToggleBtn').classList.replace('border-gray-300', 'border-indigo-600');
-            
-            allInputs.forEach(input => {
-                input.removeAttribute('readonly');
-                input.classList.remove('bg-gray-100', 'bg-gray-50', 'cursor-not-allowed');
-                input.classList.add('bg-white', 'ring-1', 'ring-indigo-200');
-            });
-        } else {
-            btnText.innerText = "Edit Inputs";
-            btnIcon.className = "fa-solid fa-pen-to-square";
-            document.getElementById('editToggleBtn').classList.replace('bg-indigo-600', 'bg-white');
-            document.getElementById('editToggleBtn').classList.replace('text-white', 'text-gray-700');
-            document.getElementById('editToggleBtn').classList.replace('border-indigo-600', 'border-gray-300');
-
-            allInputs.forEach(input => {
-                input.setAttribute('readonly', 'true');
-                input.classList.add('bg-gray-100', 'bg-gray-50', 'cursor-not-allowed');
-                input.classList.remove('bg-white', 'ring-1', 'ring-indigo-200');
-            });
-            
-            ['car', 'home', 'edu', 'marriage', 'retire'].forEach(g => updateMilestoneUI(`ms-${g}`));
-        }
-    }
-
-    function toggleMilestone(id) {
-        const checkbox = document.getElementById(id);
-        checkbox.checked = !checkbox.checked;
-        updateMilestoneUI(id);
-    }
-
-    function updateMilestoneUI(id) {
-        const checkbox = document.getElementById(id);
-        const inputsDiv = document.querySelector(`.${id}-inputs`);
-        const checkIcon = checkbox.parentElement.querySelector('.check-icon');
-        
-        if (checkbox.checked) {
-            inputsDiv.classList.remove('opacity-0', 'pointer-events-none');
-            checkIcon.classList.remove('opacity-0', 'transform', 'scale-50');
-            
-            const inputs = inputsDiv.querySelectorAll('input');
-            inputs.forEach(inp => {
-                if(!isEditMode) {
-                    inp.setAttribute('readonly', true);
-                    inp.classList.add('bg-gray-50');
-                    inp.classList.remove('bg-white');
-                } else {
-                    inp.removeAttribute('readonly');
-                    inp.classList.remove('bg-gray-50');
-                    inp.classList.add('bg-white');
-                }
-            });
-        } else {
-            inputsDiv.classList.add('opacity-0', 'pointer-events-none');
-            checkIcon.classList.add('opacity-0', 'transform', 'scale-50');
-        }
-    }
-
-    function generatePlan() {
-        const income = parseFloat(document.getElementById('monthlyIncome').value) || 0;
-        const expRent = parseFloat(document.getElementById('expRent').value) || 0;
-        const expFood = parseFloat(document.getElementById('expFood').value) || 0;
-        const expMisc = parseFloat(document.getElementById('expMisc').value) || 0;
-        const totalExpenses = expRent + expFood + expMisc;
-        const surplus = income - totalExpenses;
-
-        if(surplus <= 0) { alert("Expenses exceed income! Please edit inputs."); return; }
-
-        const milestones = [];
-        const goalIds = ['car', 'home', 'edu', 'marriage', 'retire'];
-        let activeGoalsCount = 0;
-
-        goalIds.forEach(g => {
-            if(document.getElementById(`ms-${g}`).checked) {
-                activeGoalsCount++;
-                milestones.push({ name: g.toUpperCase(), amount: parseFloat(document.getElementById(`val-${g}`).value), years: parseFloat(document.getElementById(`yr-${g}`).value) });
-            }
-        });
-
-        userData.income = income;
-        userData.surplus = surplus;
-        userData.milestones = milestones;
-        userData.goalsCount = activeGoalsCount;
-        renderSummary();
-        goToPage('page-summary');
-    }
-
-    function renderSummary() {
-        document.getElementById('display-name').innerText = userData.name;
-        document.getElementById('display-surplus').innerText = `₹${userData.surplus.toLocaleString()}`;
-        document.getElementById('ai-age').innerText = userData.age;
-        document.getElementById('ai-goals-count').innerText = userData.goalsCount;
-
-        const insuranceAmt = Math.max(userData.surplus * 0.10, 5000);
-        const remaining = userData.surplus - insuranceAmt;
-        let shortTermTotal = 0, longTermTotal = 0;
-        userData.milestones.forEach(m => { if(m.years <= 5) shortTermTotal += m.amount; else longTermTotal += m.amount; });
-        
-        const totalGoalValue = shortTermTotal + longTermTotal;
-        let shortAlloc = 0, longAlloc = 0;
-        if(totalGoalValue > 0) {
-            shortAlloc = remaining * (shortTermTotal / totalGoalValue);
-            longAlloc = remaining * (longTermTotal / totalGoalValue);
-        } else { shortAlloc = remaining * 0.4; longAlloc = remaining * 0.5; }
-
-        document.getElementById('list-important').innerHTML = `<li><strong>Term Plan:</strong> Cover ₹${(userData.income*12*15).toLocaleString()}</li><li><strong>Health:</strong> Family Floater ₹10L</li><li><strong>Cost:</strong> ₹${Math.floor(insuranceAmt)}/mo</li>`;
-        
-        const shortList = document.getElementById('list-short');
-        shortList.innerHTML = userData.milestones.filter(m=>m.years<=5).map(m => `<li><strong>${m.name}:</strong> Target ₹${m.amount.toLocaleString()} in ${m.years}yrs</li>`).join('') || '<li>No short term goals.</li>';
-        if(shortAlloc > 0) shortList.innerHTML += `<li class="font-bold text-indigo-600 mt-2">Invest: ₹${Math.floor(shortAlloc)}/mo</li>`;
-
-        const longList = document.getElementById('list-long');
-        longList.innerHTML = userData.milestones.filter(m=>m.years>5).map(m => `<li><strong>${m.name}:</strong> Target ₹${m.amount.toLocaleString()} in ${m.years}yrs</li>`).join('') || '<li>No long term goals.</li>';
-        if(longAlloc > 0) longList.innerHTML += `<li class="font-bold text-indigo-600 mt-2">Invest: ₹${Math.floor(longAlloc)}/mo</li>`;
-
-        renderChart([insuranceAmt, shortAlloc, longAlloc]);
-    }
-
-    function renderChart(amounts) {
-        const ctx = document.getElementById('wealthChart').getContext('2d');
-        if(chartInstance) chartInstance.destroy();
-        chartInstance = new Chart(ctx, {
-            type: 'doughnut',
-             {
-                labels: ['Insurance', 'Short Term Goals', 'Long Term Wealth'],
-                datasets: [{  amounts, backgroundColor: ['#EF4444', '#F59E0B', '#10B981'], borderWidth: 0 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-        });
-    }
-
-    async function submitFinal() {
-        const btn = document.getElementById('submitBtn');
-        const loader = document.getElementById('loader');
-        const txt = document.getElementById('btnText');
-        
-        btn.disabled = true;
-        loader.style.display = 'block';
-        txt.innerText = 'Saving...';
-
-        userData.consult = document.getElementById('consultCheck').checked;
-        userData.date = new Date().toLocaleDateString();
-
-        if (typeof window.submitToFirebase !== 'function') {
-            alert("Firebase not initialized. Check console.");
-            btn.disabled = false;
-            loader.style.display = 'none';
-            txt.innerText = 'Save & Submit Plan';
-            return;
-        }
-
-        const success = await window.submitToFirebase(userData);
-
-        if(success) {
-            alert("Plan Saved to Cloud! Our advisors will contact you.");
-            resetApp();
-        } else {
-            btn.disabled = false;
-            loader.style.display = 'none';
-            txt.innerText = 'Save & Submit Plan';
-            alert("Failed to save. Check your Firebase configuration in the code.");
-        }
-    }
-
-    async function toggleAdmin() {
-        const pass = prompt("Admin Password (admin):");
-        if(pass === 'admin') showAdmin();
-    }
-
-    async function showAdmin() {
-        const tbody = document.getElementById('admin-table-body');
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Loading data from cloud...</td></tr>';
-        goToPage('admin-page');
-
-        const dbData = await window.fetchFromFirebase();
-        tbody.innerHTML = '';
-
-        if(dbData.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No data found in database.</td></tr>';
-        } else {
-            dbData.forEach(row => {
-                const goals = row.milestones ? row.milestones.map(m=>m.name).join(', ') : 'None';
-                tbody.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="px-5 py-4 font-bold">${row.name}</td>
-                        <td class="px-5 py-4">${row.age}</td>
-                        <td class="px-5 py-4">${row.mobile}</td>
-                        <td class="px-5 py-4">₹${row.income}</td>
-                        <td class="px-5 py-4 text-xs text-gray-500">${goals}</td>
-                        <td class="px-5 py-4">${row.consult ? '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Yes</span>' : 'No'}</td>
-                        <td class="px-5 py-4 text-xs">${row.date}</td>
-                    </tr>
-                `;
-            });
-        }
-    }
-
-    async function downloadCSV() {
-        const dbData = await window.fetchFromFirebase();
-        if(!dbData.length) return alert("No data");
-        let csv = "Name,Age,Mobile,Income,Goals,Consult,Date\n";
-        dbData.forEach(r => {
-            const goals = r.milestones ? r.milestones.map(m=>m.name).join(';') : 'None';
-            csv += `${r.name},${r.age},${r.mobile},${r.income},"${goals}",${r.consult},${r.date}\n`;
-        });
-        const link = document.createElement("a");
-        link.href = encodeURI("text/csv;charset=utf-8," + csv);
-        link.download = "unloan_cloud_data.csv";
-        link.click();
-    }
-</script>
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+-    <meta charset="UTF-8">
+-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+-    <title>unloan | Plan Your Freedom</title>
+-    
+-    <!-- Tailwind CSS -->
+-    <script src="https://cdn.tailwindcss.com"></script>
+-    <!-- Google Fonts -->
+-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+-    <!-- Chart.js -->
+-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+-    <!-- Font Awesome -->
+-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+-
+-    <style>
+-        body { font-family: 'Poppins', sans-serif; }
+-        .glass-panel {
+-            background: rgba(255, 255, 255, 0.95);
+-            backdrop-filter: blur(12px);
+-            border-radius: 24px;
+-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+-            border: 1px solid rgba(255, 255, 255, 0.18);
+-        }
+-        
+-        /* CRITICAL FIX: Force hide with !important */
+-        .hidden-section { display: none !important; }
+-        
+-        /* Custom Checkbox Styling */
+-        .custom-checkbox:checked + div { border-color: #4F46E5; background-color: #EEF2FF; }
+-        .custom-checkbox:checked + div .check-icon { opacity: 1; transform: scale(1); }
+-        
+-        /* Scrollable Container for Page 2 */
+-        .scroll-container {
+-            max-height: calc(100vh - 220px);
+-            overflow-y: auto;
+-            scrollbar-width: thin;
+-            scrollbar-color: #cbd5e1 transparent;
+-        }
+-        .scroll-container::-webkit-scrollbar { width: 6px; }
+-        .scroll-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+-
+-        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+-        
+-        /* Input States */
+-        input[readonly] { background-color: #f3f4f6; color: #6b7280; cursor: not-allowed; }
+-        input:not([readonly]) { background-color: #ffffff; border-color: #4F46E5; ring: 2px; }
+-        
+-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #4F46E5; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; display: none; margin: 0 auto; }
+-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+-    </style>
++  <meta charset="UTF-8" />
++  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++  <title>unloan | Money Planner</title>
++  <script src="https://cdn.tailwindcss.com"></script>
++  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
++  <link rel="preconnect" href="https://fonts.googleapis.com" />
++  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
++  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
++  <style>
++    body { font-family: 'Poppins', sans-serif; }
++    .panel {
++      background: rgba(255, 255, 255, 0.95);
++      border: 1px solid rgba(229, 231, 235, 0.8);
++      box-shadow: 0 20px 45px rgba(99, 102, 241, 0.12);
++      border-radius: 1rem;
++      backdrop-filter: blur(8px);
++    }
++    .hidden-page { display: none !important; }
++  </style>
+ </head>
+-<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col relative overflow-hidden">
+-
+-    <!-- Background Blobs -->
+-    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+-        <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+-        <div class="absolute top-[-10%] right-[-10%] w-96 h-96 bg-yellow-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+-        <div class="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
++<body class="bg-gradient-to-br from-indigo-50 via-white to-fuchsia-50 text-gray-800 min-h-screen">
++  <header class="sticky top-0 z-20 border-b border-gray-100 bg-white/80 backdrop-blur">
++    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
++      <h1 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-700 to-pink-600 bg-clip-text text-transparent cursor-pointer" onclick="resetApp()">unloan</h1>
++      <div class="flex items-center gap-4">
++        <button onclick="showRecords()" class="text-sm font-semibold text-indigo-700 hover:text-pink-600">View Saved Plans</button>
++        <button onclick="goTo('page-admin-login')" class="text-sm font-semibold text-gray-700 hover:text-indigo-700">Admin Login</button>
++      </div>
+     </div>
++  </header>
++
++  <main class="max-w-6xl mx-auto px-4 py-8">
++    <section id="page-entry" class="panel p-6 md:p-8 max-w-xl mx-auto">
++      <h2 class="text-2xl font-bold mb-2">Start your loan-free planning journey</h2>
++      <p class="text-sm text-gray-500 mb-6">Please enter your basic profile details.</p>
++      <form id="entryForm" class="space-y-4">
++        <div>
++          <label class="text-xs font-semibold uppercase text-gray-500">Name</label>
++          <input id="name" required class="mt-1 w-full rounded-lg border border-gray-200 p-3 focus:ring-2 focus:ring-indigo-400 outline-none" placeholder="e.g. Aarav Mehta" />
++        </div>
++        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
++          <div>
++            <label class="text-xs font-semibold uppercase text-gray-500">Age</label>
++            <input id="age" type="number" min="18" max="100" required class="mt-1 w-full rounded-lg border border-gray-200 p-3 focus:ring-2 focus:ring-indigo-400 outline-none" />
++          </div>
++          <div>
++            <label class="text-xs font-semibold uppercase text-gray-500">Mobile</label>
++            <input id="mobile" required pattern="[0-9]{10}" class="mt-1 w-full rounded-lg border border-gray-200 p-3 focus:ring-2 focus:ring-indigo-400 outline-none" placeholder="10-digit" />
++          </div>
++          <div>
++            <label class="text-xs font-semibold uppercase text-gray-500">Dependents</label>
++            <input id="dependents" type="number" min="0" max="10" value="0" class="mt-1 w-full rounded-lg border border-gray-200 p-3 focus:ring-2 focus:ring-indigo-400 outline-none" />
++          </div>
++        </div>
++        <div>
++          <label class="text-xs font-semibold uppercase text-gray-500">Marital Status</label>
++          <select id="maritalStatus" class="mt-1 w-full rounded-lg border border-gray-200 p-3 focus:ring-2 focus:ring-indigo-400 outline-none">
++            <option value="single">Single</option>
++            <option value="married">Married</option>
++          </select>
++        </div>
++        <button class="w-full bg-gradient-to-r from-indigo-600 to-pink-600 text-white py-3 rounded-xl font-semibold">Continue</button>
++      </form>
++    </section>
++
++    <section id="page-financial" class="hidden-page space-y-6">
++      <div class="panel p-6">
++        <h2 class="text-2xl font-bold">Financial Inputs (INR)</h2>
++        <p class="text-sm text-gray-500">Choose Monthly or Yearly entry. App auto-normalizes to monthly for planning.</p>
++        <div class="mt-4 flex gap-4">
++          <label class="text-sm"><input type="radio" name="mode" value="monthly" checked onchange="setMode(this.value)"> Monthly</label>
++          <label class="text-sm"><input type="radio" name="mode" value="yearly" onchange="setMode(this.value)"> Yearly</label>
++        </div>
++      </div>
++
++      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
++        <div class="panel p-6 space-y-4">
++          <h3 class="font-bold text-lg">Income & Expenses</h3>
++          <div><label class="text-sm text-gray-600">Income (<span class="mode-label">per month</span>)</label><input id="income" type="number" min="0" class="w-full border rounded-lg p-3 mt-1" /></div>
++          <div><label class="text-sm text-gray-600">Rent / EMI (<span class="mode-label">per month</span>)</label><input id="rent" type="number" min="0" class="w-full border rounded-lg p-3 mt-1" /></div>
++          <div><label class="text-sm text-gray-600">Food + Utilities (<span class="mode-label">per month</span>)</label><input id="food" type="number" min="0" class="w-full border rounded-lg p-3 mt-1" /></div>
++          <div><label class="text-sm text-gray-600">Lifestyle + Misc (<span class="mode-label">per month</span>)</label><input id="misc" type="number" min="0" class="w-full border rounded-lg p-3 mt-1" /></div>
++        </div>
+ 
+-    <!-- Navbar -->
+-    <nav class="bg-white/80 backdrop-blur-md shadow-sm p-4 sticky top-0 z-50 border-b border-gray-100">
+-        <div class="max-w-7xl mx-auto flex justify-between items-center">
+-            <h1 class="text-3xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-600 cursor-pointer" onclick="resetApp()">
+-                <i class="fa-solid fa-rocket mr-2"></i>unloan
+-            </h1>
+-            <div class="space-x-4">
+-                <button onclick="showAdmin()" class="text-sm font-medium text-gray-500 hover:text-indigo-600 transition"><i class="fa-solid fa-user-shield mr-1"></i> Admin</button>
+-            </div>
++        <div class="panel p-6 space-y-4">
++          <h3 class="font-bold text-lg">Milestones to Prepare For</h3>
++          <p class="text-xs text-gray-500">Enable what matters to you and enter target amount + time horizon.</p>
++          <div class="space-y-3" id="milestonesBox"></div>
+         </div>
+-    </nav>
+-
+-    <!-- Main Content Area -->
+-    <main class="flex-grow p-4 md:p-6 max-w-7xl mx-auto w-full flex items-center justify-center min-h-[80vh]">
+-        
+-        <!-- ================= PAGE 1: LOGIN (VISIBLE BY DEFAULT) ================= -->
+-        <section id="page-login" class="w-full max-w-md glass-panel p-8 fade-in">
+-            <div class="text-center mb-8">
+-                <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome</h2>
+-                <p class="text-gray-500">Let's get started with your basic details.</p>
+-            </div>
+-            <form onsubmit="handleLogin(event)" class="space-y-5">
+-                <div>
+-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Full Name</label>
+-                    <div class="relative">
+-                        <i class="fa-solid fa-user absolute left-3 top-3.5 text-gray-400"></i>
+-                        <input type="text" id="userName" required class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition" placeholder="e.g. Rahul Sharma">
+-                    </div>
+-                </div>
+-                <div class="grid grid-cols-2 gap-4">
+-                    <div>
+-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Age</label>
+-                        <div class="relative">
+-                            <i class="fa-solid fa-cake-candles absolute left-3 top-3.5 text-gray-400"></i>
+-                            <input type="number" id="userAge" required class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition" placeholder="25">
+-                        </div>
+-                    </div>
+-                    <div>
+-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Mobile</label>
+-                        <div class="relative">
+-                            <i class="fa-solid fa-phone absolute left-3 top-3.5 text-gray-400"></i>
+-                            <input type="tel" id="userMobile" required class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition" placeholder="98765...">
+-                        </div>
+-                    </div>
+-                </div>
+-                <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-pink-600 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition transform duration-200 mt-4">
+-                    Next Step <i class="fa-solid fa-arrow-right ml-2"></i>
+-                </button>
+-            </form>
+-        </section>
+-
+-        <!-- ================= PAGE 2: FINANCIALS (HIDDEN BY DEFAULT) ================= -->
+-        <section id="page-financials" class="hidden-section w-full max-w-5xl fade-in flex flex-col h-[calc(100vh-100px)]">
+-            
+-            <!-- Header & Edit Toggle -->
+-            <div class="flex flex-col md:flex-row justify-between items-center mb-4 shrink-0">
+-                <div>
+-                    <h2 class="text-2xl font-bold text-gray-800">Financial Details</h2>
+-                    <p class="text-sm text-gray-500">Enter your income, expenses, and goals.</p>
+-                </div>
+-                <button id="editToggleBtn" onclick="toggleEditMode()" class="mt-4 md:mt-0 flex items-center space-x-2 bg-white border border-gray-300 text-gray-700 px-5 py-2 rounded-full hover:bg-gray-50 transition shadow-sm">
+-                    <i class="fa-solid fa-pen-to-square"></i>
+-                    <span id="editBtnText">Edit Inputs</span>
+-                </button>
+-            </div>
+-
+-            <!-- Scrollable Content Area -->
+-            <div class="scroll-container glass-panel p-6 mb-4 flex-grow">
+-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+-                    
+-                    <!-- Left Column: Income & Expenses -->
+-                    <div class="lg:col-span-4 space-y-6">
+-                        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+-                            <h3 class="font-bold text-lg text-indigo-700 mb-4 flex items-center"><i class="fa-solid fa-wallet mr-2"></i> Cashflow</h3>
+-                            
+-                            <div class="mb-4">
+-                                <label class="block text-xs font-semibold text-gray-500 mb-1">Monthly Income (₹)</label>
+-                                <input type="number" id="monthlyIncome" readonly class="w-full p-3 bg-gray-100 border border-gray-200 rounded-lg outline-none font-bold text-gray-700 transition-colors" placeholder="e.g. 80000">
+-                            </div>
+-
+-                            <div class="mb-4">
+-                                <label class="block text-xs font-semibold text-gray-500 mb-1">Marital Status</label>
+-                                <select id="maritalStatus" readonly class="w-full p-3 bg-gray-100 border border-gray-200 rounded-lg outline-none transition-colors">
+-                                    <option value="single">Single</option>
+-                                    <option value="married">Married</option>
+-                                </select>
+-                            </div>
+-
+-                            <div class="border-t pt-4 mt-4">
+-                                <label class="block text-xs font-semibold text-gray-500 mb-2">Monthly Expenses</label>
+-                                <div class="space-y-3">
+-                                    <div class="flex justify-between items-center">
+-                                        <span class="text-sm text-gray-600">Rent/EMI</span>
+-                                        <input type="number" id="expRent" readonly placeholder="0" class="w-24 p-1 text-right border-b border-gray-300 bg-transparent outline-none transition-colors">
+-                                    </div>
+-                                    <div class="flex justify-between items-center">
+-                                        <span class="text-sm text-gray-600">Food/Bills</span>
+-                                        <input type="number" id="expFood" readonly placeholder="0" class="w-24 p-1 text-right border-b border-gray-300 bg-transparent outline-none transition-colors">
+-                                    </div>
+-                                    <div class="flex justify-between items-center">
+-                                        <span class="text-sm text-gray-600">Lifestyle</span>
+-                                        <input type="number" id="expMisc" readonly placeholder="0" class="w-24 p-1 text-right border-b border-gray-300 bg-transparent outline-none transition-colors">
+-                                    </div>
+-                                </div>
+-                            </div>
+-                        </div>
+-                    </div>
+-
+-                    <!-- Right Column: Milestones -->
+-                    <div class="lg:col-span-8">
+-                        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm h-full">
+-                            <div class="flex justify-between items-center mb-4">
+-                                <h3 class="font-bold text-lg text-pink-600 flex items-center"><i class="fa-solid fa-flag-checkered mr-2"></i> Future Goals</h3>
+-                                <span class="text-xs bg-pink-50 text-pink-600 px-2 py-1 rounded border border-pink-100">Select & Edit Targets</span>
+-                            </div>
+-
+-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+-                                <!-- Car -->
+-                                <div class="group relative border border-gray-200 rounded-xl p-4 hover:shadow-md transition cursor-pointer" onclick="toggleMilestone('ms-car')">
+-                                    <input type="checkbox" id="ms-car" class="custom-checkbox hidden" onchange="updateMilestoneUI('ms-car')">
+-                                    <div class="flex items-start space-x-3">
+-                                        <div class="check-icon w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs transition-all duration-200 opacity-0 transform scale-50"><i class="fa-solid fa-check"></i></div>
+-                                        <div class="flex-grow">
+-                                            <h4 class="font-bold text-gray-800">New Car</h4>
+-                                            <p class="text-xs text-gray-500 mb-2">Avg Target: ₹8L</p>
+-                                            <div class="grid grid-cols-2 gap-2 opacity-0 pointer-events-none transition-opacity duration-300 ms-car-inputs">
+-                                                <div><label class="text-[10px] uppercase text-gray-400">Amount (₹)</label><input type="number" id="val-car" value="800000" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
+-                                                <div><label class="text-[10px] uppercase text-gray-400">In (Years)</label><input type="number" id="yr-car" value="3" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
+-                                            </div>
+-                                        </div>
+-                                    </div>
+-                                </div>
+-
+-                                <!-- Home -->
+-                                <div class="group relative border border-gray-200 rounded-xl p-4 hover:shadow-md transition cursor-pointer" onclick="toggleMilestone('ms-home')">
+-                                    <input type="checkbox" id="ms-home" class="custom-checkbox hidden" onchange="updateMilestoneUI('ms-home')">
+-                                    <div class="flex items-start space-x-3">
+-                                        <div class="check-icon w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs transition-all duration-200 opacity-0 transform scale-50"><i class="fa-solid fa-check"></i></div>
+-                                        <div class="flex-grow">
+-                                            <h4 class="font-bold text-gray-800">Home Downpayment</h4>
+-                                            <p class="text-xs text-gray-500 mb-2">Avg Target: ₹20L</p>
+-                                            <div class="grid grid-cols-2 gap-2 opacity-0 pointer-events-none transition-opacity duration-300 ms-home-inputs">
+-                                                <div><label class="text-[10px] uppercase text-gray-400">Amount (₹)</label><input type="number" id="val-home" value="2000000" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
+-                                                <div><label class="text-[10px] uppercase text-gray-400">In (Years)</label><input type="number" id="yr-home" value="7" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
+-                                            </div>
+-                                        </div>
+-                                    </div>
+-                                </div>
+-
+-                                <!-- Education -->
+-                                <div class="group relative border border-gray-200 rounded-xl p-4 hover:shadow-md transition cursor-pointer" onclick="toggleMilestone('ms-edu')">
+-                                    <input type="checkbox" id="ms-edu" class="custom-checkbox hidden" onchange="updateMilestoneUI('ms-edu')">
+-                                    <div class="flex items-start space-x-3">
+-                                        <div class="check-icon w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs transition-all duration-200 opacity-0 transform scale-50"><i class="fa-solid fa-check"></i></div>
+-                                        <div class="flex-grow">
+-                                            <h4 class="font-bold text-gray-800">Child's Education</h4>
+-                                            <p class="text-xs text-gray-500 mb-2">Avg Target: ₹15L</p>
+-                                            <div class="grid grid-cols-2 gap-2 opacity-0 pointer-events-none transition-opacity duration-300 ms-edu-inputs">
+-                                                <div><label class="text-[10px] uppercase text-gray-400">Amount (₹)</label><input type="number" id="val-edu" value="1500000" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
+-                                                <div><label class="text-[10px] uppercase text-gray-400">In (Years)</label><input type="number" id="yr-edu" value="15" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
+-                                            </div>
+-                                        </div>
+-                                    </div>
+-                                </div>
+-
+-                                <!-- Marriage -->
+-                                <div class="group relative border border-gray-200 rounded-xl p-4 hover:shadow-md transition cursor-pointer" onclick="toggleMilestone('ms-marriage')">
+-                                    <input type="checkbox" id="ms-marriage" class="custom-checkbox hidden" onchange="updateMilestoneUI('ms-marriage')">
+-                                    <div class="flex items-start space-x-3">
+-                                        <div class="check-icon w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs transition-all duration-200 opacity-0 transform scale-50"><i class="fa-solid fa-check"></i></div>
+-                                        <div class="flex-grow">
+-                                            <h4 class="font-bold text-gray-800">Wedding Fund</h4>
+-                                            <p class="text-xs text-gray-500 mb-2">Avg Target: ₹10L</p>
+-                                            <div class="grid grid-cols-2 gap-2 opacity-0 pointer-events-none transition-opacity duration-300 ms-marriage-inputs">
+-                                                <div><label class="text-[10px] uppercase text-gray-400">Amount (₹)</label><input type="number" id="val-marriage" value="1000000" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
+-                                                <div><label class="text-[10px] uppercase text-gray-400">In (Years)</label><input type="number" id="yr-marriage" value="5" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
+-                                            </div>
+-                                        </div>
+-                                    </div>
+-                                </div>
+-
+-                                <!-- Retirement -->
+-                                <div class="group relative border border-gray-200 rounded-xl p-4 hover:shadow-md transition cursor-pointer" onclick="toggleMilestone('ms-retire')">
+-                                    <input type="checkbox" id="ms-retire" class="custom-checkbox hidden" onchange="updateMilestoneUI('ms-retire')">
+-                                    <div class="flex items-start space-x-3">
+-                                        <div class="check-icon w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs transition-all duration-200 opacity-0 transform scale-50"><i class="fa-solid fa-check"></i></div>
+-                                        <div class="flex-grow">
+-                                            <h4 class="font-bold text-gray-800">Retirement Corpus</h4>
+-                                            <p class="text-xs text-gray-500 mb-2">Avg Target: ₹2Cr</p>
+-                                            <div class="grid grid-cols-2 gap-2 opacity-0 pointer-events-none transition-opacity duration-300 ms-retire-inputs">
+-                                                <div><label class="text-[10px] uppercase text-gray-400">Amount (₹)</label><input type="number" id="val-retire" value="20000000" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
+-                                                <div><label class="text-[10px] uppercase text-gray-400">In (Years)</label><input type="number" id="yr-retire" value="25" readonly class="w-full text-sm p-1 border rounded bg-gray-50"></div>
+-                                            </div>
+-                                        </div>
+-                                    </div>
+-                                </div>
+-                            </div>
+-                        </div>
+-                    </div>
+-                </div>
+-            </div>
+-
+-            <!-- Fixed Bottom Action Bar -->
+-            <div class="shrink-0 pt-4 pb-2">
+-                <button onclick="generatePlan()" class="w-full bg-gray-900 text-white text-lg py-4 rounded-xl font-bold hover:bg-black transition shadow-2xl transform hover:-translate-y-1 flex justify-center items-center">
+-                    Generate AI Plan <i class="fa-solid fa-wand-magic-sparkles ml-2"></i>
+-                </button>
+-            </div>
+-        </section>
+-
+-        <!-- ================= PAGE 3: SUMMARY (HIDDEN BY DEFAULT) ================= -->
+-        <section id="page-summary" class="hidden-section w-full max-w-6xl fade-in space-y-8 pb-10">
+-            <div class="glass-panel p-8 flex flex-col md:flex-row justify-between items-center bg-gradient-to-r from-indigo-50 to-white border-l-8 border-indigo-600">
+-                <div>
+-                    <h2 class="text-3xl font-bold text-gray-800">Hi, <span id="display-name" class="text-indigo-600"></span>!</h2>
+-                    <p class="text-gray-500 mt-1">Based on your goals, here is your wealth roadmap.</p>
+-                </div>
+-                <div class="mt-6 md:mt-0 text-center md:text-right bg-white px-6 py-3 rounded-xl shadow-sm border border-gray-100">
+-                    <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Monthly Surplus Available</p>
+-                    <p class="text-4xl font-extrabold text-green-600" id="display-surplus">₹0</p>
+-                </div>
+-            </div>
+-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+-                <div class="lg:col-span-2 glass-panel p-6">
+-                    <h3 class="font-bold text-lg mb-6 text-gray-700">Recommended Asset Allocation</h3>
+-                    <div class="relative h-72 w-full flex justify-center">
+-                        <canvas id="wealthChart"></canvas>
+-                    </div>
+-                </div>
+-                <div class="glass-panel p-6 space-y-4">
+-                    <h3 class="font-bold text-lg text-gray-700"><i class="fa-solid fa-brain text-purple-500 mr-2"></i>AI Insights</h3>
+-                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+-                        <h4 class="font-bold text-blue-800 text-sm">Safety First</h4>
+-                        <p class="text-xs text-blue-600 mt-1">With your age (<span id="ai-age"></span>), term insurance is critical. Aim for 15x income cover.</p>
+-                    </div>
+-                    <div class="bg-orange-50 p-4 rounded-xl border border-orange-100">
+-                        <h4 class="font-bold text-orange-800 text-sm">Goal Alert</h4>
+-                        <p class="text-xs text-orange-600 mt-1">You have selected <span id="ai-goals-count"></span> major milestones. Starting SIPs now reduces loan dependence by 80%.</p>
+-                    </div>
+-                    <div class="bg-green-50 p-4 rounded-xl border border-green-100">
+-                        <h4 class="font-bold text-green-800 text-sm">Wealth Builder</h4>
+-                        <p class="text-xs text-green-600 mt-1">Equity exposure is recommended for goals > 7 years to beat 6% inflation.</p>
+-                    </div>
+-                </div>
+-            </div>
+-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+-                <div class="glass-panel p-6 border-t-4 border-red-500 hover:shadow-lg transition">
+-                    <div class="flex items-center mb-4"><div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-500 mr-3"><i class="fa-solid fa-shield-heart"></i></div><h3 class="font-bold text-lg">Protection</h3></div>
+-                    <ul id="list-important" class="space-y-3 text-sm text-gray-600"></ul>
+-                </div>
+-                <div class="glass-panel p-6 border-t-4 border-yellow-500 hover:shadow-lg transition">
+-                    <div class="flex items-center mb-4"><div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 mr-3"><i class="fa-solid fa-clock"></i></div><h3 class="font-bold text-lg">Short Term Goals</h3></div>
+-                    <ul id="list-short" class="space-y-3 text-sm text-gray-600"></ul>
+-                </div>
+-                <div class="glass-panel p-6 border-t-4 border-green-500 hover:shadow-lg transition">
+-                    <div class="flex items-center mb-4"><div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-3"><i class="fa-solid fa-seedling"></i></div><h3 class="font-bold text-lg">Long Term Wealth</h3></div>
+-                    <ul id="list-long" class="space-y-3 text-sm text-gray-600"></ul>
+-                </div>
+-            </div>
+-            <div class="glass-panel p-8 text-center bg-gray-900 text-white rounded-2xl shadow-2xl">
+-                <div class="flex items-center justify-center space-x-4 mb-6">
+-                    <input type="checkbox" id="consultCheck" class="w-6 h-6 accent-pink-500 cursor-pointer">
+-                    <label for="consultCheck" class="text-xl font-medium cursor-pointer">Yes, help me reduce loan dependence. Discuss next steps.</label>
+-                </div>
+-                <button onclick="submitFinal()" id="submitBtn" class="bg-gradient-to-r from-pink-500 to-indigo-600 text-white font-bold py-3 px-12 rounded-full hover:opacity-90 transition shadow-lg flex items-center justify-center">
+-                    <span id="btnText">Save & Submit Plan</span>
+-                    <div id="loader" class="loader ml-2"></div>
+-                </button>
+-            </div>
+-        </section>
+-
+-        <!-- ADMIN PAGE -->
+-        <section id="admin-page" class="hidden-section w-full max-w-6xl fade-in">
+-            <div class="flex justify-between items-center mb-6">
+-                <h2 class="text-2xl font-bold text-gray-800">Admin Dashboard (Live Data)</h2>
+-                <button onclick="downloadCSV()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow flex items-center transition">
+-                    <i class="fa-solid fa-file-csv mr-2"></i> Download CSV
+-                </button>
+-            </div>
+-            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+-                <table class="min-w-full leading-normal">
+-                    <thead>
+-                        <tr class="bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+-                            <th class="px-5 py-3">Name</th>
+-                            <th class="px-5 py-3">Age</th>
+-                            <th class="px-5 py-3">Mobile</th>
+-                            <th class="px-5 py-3">Income</th>
+-                            <th class="px-5 py-3">Goals Selected</th>
+-                            <th class="px-5 py-3">Consult?</th>
+-                            <th class="px-5 py-3">Date</th>
+-                        </tr>
+-                    </thead>
+-                    <tbody id="admin-table-body" class="text-sm text-gray-700"></tbody>
+-                </table>
+-            </div>
+-            <button onclick="toggleAdmin()" class="mt-6 text-indigo-600 font-semibold hover:underline">← Back to App</button>
+-        </section>
+-
+-    </main>
+-
+-    <footer class="bg-white border-t border-gray-200 py-6 text-center text-gray-500 text-sm">
+-        <p>&copy; 2023 unloan. Designed for Financial Freedom.</p>
+-    </footer>
+-
+-    <!-- FIREBASE SDKs -->
+-    <script type="module">
+-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+-        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+-
+-        // ⚠️ REPLACE WITH YOUR ACTUAL FIREBASE CONFIG ️
+-        const firebaseConfig = {
+-            const firebaseConfig = {
+-            apiKey: "AIzaSyB2X_QYodQDt-huUpHDxuDg7K2ADPuNnSk",
+-            authDomain: "unloan-6ee77.firebaseapp.com",
+-            projectId: "unloan-6ee77",
+-            storageBucket: "unloan-6ee77.firebasestorage.app",
+-            messagingSenderId: "1094363896252",
+-            appId: "1:1094363896252:web:f8c5cf52b3f270bfdcf3b9"
+-        };
+-        };
+-
+-        const app = initializeApp(firebaseConfig);
+-        const db = getFirestore(app);
+-
+-        async function submitData(userData) {
+-            try {
+-                await addDoc(collection(db, "users"), userData);
+-                return true;
+-            } catch (e) {
+-                console.error("Error adding document: ", e);
+-                return false;
+-            }
+-        }
++      </div>
+ 
+-        async function fetchData() {
+-            try {
+-                const querySnapshot = await getDocs(collection(db, "users"));
+-                const data = [];
+-                querySnapshot.forEach((doc) => {
+-                    data.push({ id: doc.id, ...doc.data() });
+-                });
+-                return data;
+-            } catch (e) {
+-                console.error("Error fetching documents: ", e);
+-                return [];
+-            }
+-        }
++      <button onclick="generatePlan()" class="w-full bg-gray-900 hover:bg-black text-white rounded-xl py-3 font-semibold">Generate AI Suggestions</button>
++    </section>
+ 
+-        window.submitToFirebase = submitData;
+-        window.fetchFromFirebase = fetchData;
+-    </script>
+-
+-    <!-- APP LOGIC -->
+-    <script>
+-    let userData = {};
+-    let chartInstance = null;
+-    let isEditMode = false; 
+-
+-    // --- ROBUST NAVIGATION FUNCTION ---
+-    function goToPage(pageId) {
+-        console.log("Navigating to:", pageId);
+-        // 1. Hide EVERY section first
+-        const sections = document.querySelectorAll('section');
+-        sections.forEach(sec => {
+-            sec.classList.add('hidden-section');
+-        });
+-        
+-        // 2. Show ONLY the target section
+-        const target = document.getElementById(pageId);
+-        if (target) {
+-            target.classList.remove('hidden-section');
+-            window.scrollTo(0, 0);
+-        } else {
+-            console.error("Page ID not found:", pageId);
+-        }
++    <section id="page-summary" class="hidden-page space-y-6">
++      <div class="panel p-6 flex flex-col md:flex-row justify-between gap-4 items-center">
++        <div>
++          <h2 class="text-2xl font-bold">Summary for <span id="sName" class="text-indigo-700"></span></h2>
++          <p class="text-sm text-gray-500">Suggested plan to reduce loan dependence by planning in advance.</p>
++        </div>
++        <div class="text-center md:text-right">
++          <p class="text-xs uppercase text-gray-500">Monthly Surplus</p>
++          <p id="sSurplus" class="text-3xl font-extrabold text-green-600">₹0</p>
++        </div>
++      </div>
++
++      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
++        <div class="panel p-6 lg:col-span-2">
++          <h3 class="font-semibold mb-4">Wealth Spread Graph</h3>
++          <div class="h-72"><canvas id="allocationChart"></canvas></div>
++        </div>
++        <div class="panel p-6">
++          <h3 class="font-semibold mb-3">AI-style Insight Notes</h3>
++          <ul id="aiNotes" class="text-sm space-y-2"></ul>
++        </div>
++      </div>
++
++      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
++        <div class="panel p-6 border-t-4 border-red-500"><h4 class="font-bold mb-3">Most Important (Insurance)</h4><ul id="importantList" class="text-sm space-y-1"></ul></div>
++        <div class="panel p-6 border-t-4 border-amber-500"><h4 class="font-bold mb-3">Short Term (Milestones)</h4><ul id="shortList" class="text-sm space-y-1"></ul></div>
++        <div class="panel p-6 border-t-4 border-emerald-500"><h4 class="font-bold mb-3">Long Term (Wealth Creators)</h4><ul id="longList" class="text-sm space-y-1"></ul></div>
++      </div>
++
++      <div class="panel p-6">
++        <h3 class="font-semibold mb-2">Data References (India oriented benchmarks)</h3>
++        <ul class="list-disc pl-5 text-sm text-gray-700 space-y-1" id="refs"></ul>
++      </div>
++
++      <div class="panel p-6 bg-gray-900 text-white text-center">
++        <label class="inline-flex items-center gap-3 text-lg">
++          <input id="consultCheck" type="checkbox" class="w-5 h-5 accent-pink-500" />
++          <span>Do you want to discuss with us for next steps and help you reduce loan dependence?</span>
++        </label>
++        <div class="mt-4">
++          <button onclick="savePlan()" id="savePlanBtn" class="bg-gradient-to-r from-pink-500 to-indigo-600 px-8 py-3 rounded-full font-semibold">Save Plan</button>
++        </div>
++      </div>
++    </section>
++
++    <section id="page-records" class="hidden-page panel p-6">
++      <div class="flex items-center justify-between mb-4">
++        <h2 class="text-xl font-bold">Saved Planner Data (Local Snapshot)</h2>
++        <button onclick="goTo('page-entry')" class="text-indigo-700 font-semibold">Back</button>
++      </div>
++      <div class="overflow-x-auto">
++        <table class="w-full text-sm">
++          <thead>
++            <tr class="border-b text-left">
++              <th class="py-2">Name</th><th>Age</th><th>Mobile</th><th>Marital</th><th>Dependents</th><th>Income (₹/mo)</th><th>Surplus (₹/mo)</th><th>Consult</th><th>Date</th>
++            </tr>
++          </thead>
++          <tbody id="recordsBody"></tbody>
++        </table>
++      </div>
++    </section>
++
++    <section id="page-admin-login" class="hidden-page panel p-6 max-w-md mx-auto">
++      <h2 class="text-xl font-bold mb-2">Admin Login</h2>
++      <p class="text-sm text-gray-500 mb-4">Login to view user entries stored in Firebase.</p>
++      <form id="adminLoginForm" class="space-y-3">
++        <div>
++          <label class="text-xs uppercase text-gray-500 font-semibold">Username</label>
++          <input id="adminUser" required class="mt-1 w-full border rounded-lg p-3" placeholder="admin" />
++        </div>
++        <div>
++          <label class="text-xs uppercase text-gray-500 font-semibold">Password</label>
++          <input id="adminPass" required type="password" class="mt-1 w-full border rounded-lg p-3" placeholder="••••••" />
++        </div>
++        <button class="w-full bg-indigo-600 text-white rounded-lg py-2 font-semibold">Login</button>
++      </form>
++    </section>
++
++    <section id="page-admin" class="hidden-page panel p-6">
++      <div class="flex items-center justify-between mb-4">
++        <h2 class="text-xl font-bold">Admin Dashboard (Firebase)</h2>
++        <button onclick="goTo('page-entry')" class="text-indigo-700 font-semibold">Back</button>
++      </div>
++      <p id="adminStatus" class="text-sm text-gray-500 mb-4">Loading...</p>
++      <div class="overflow-x-auto">
++        <table class="w-full text-sm">
++          <thead>
++            <tr class="border-b text-left">
++              <th class="py-2">Name</th><th>Age</th><th>Mobile</th><th>Marital</th><th>Dependents</th><th>Income (₹/mo)</th><th>Surplus (₹/mo)</th><th>Consult</th><th>Date</th><th>Milestones</th>
++            </tr>
++          </thead>
++          <tbody id="adminBody"></tbody>
++        </table>
++      </div>
++    </section>
++  </main>
++
++  <script type="module">
++    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
++    import { getFirestore, collection, addDoc, getDocs, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
++
++    // Replace with your Firebase project config.
++    const firebaseConfig = {
++      apiKey: "AIzaSyB2X_QYodQDt-huUpHDxuDg7K2ADPuNnSk",
++      authDomain: "unloan-6ee77.firebaseapp.com",
++      projectId: "unloan-6ee77",
++      storageBucket: "unloan-6ee77.firebasestorage.app",
++      messagingSenderId: "1094363896252",
++      appId: "1:1094363896252:web:f8c5cf52b3f270bfdcf3b9"
++    };
++
++    const hasRealConfig = Object.values(firebaseConfig).every((v) => v && !String(v).includes('REPLACE_ME'));
++    let db = null;
++
++    if (hasRealConfig) {
++      const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
++      db = getFirestore(app);
+     }
+ 
+-    // --- PAGE 1 TO PAGE 2 TRANSITION ---
+-    function handleLogin(e) {
+-        e.preventDefault();
+-        
+-        // Capture Data
+-        userData.name = document.getElementById('userName').value;
+-        userData.age = parseInt(document.getElementById('userAge').value);
+-        userData.mobile = document.getElementById('userMobile').value;
+-        
+-        console.log("Login Data Captured:", userData);
+-
+-        // Reset Edit Mode
+-        isEditMode = false; 
+-        updateEditModeUI(false);
+-        
+-        // GO TO PAGE 2
+-        goToPage('page-financials');
++    async function savePlanToFirebase(payload) {
++      if (!db) {
++        return { ok: false, msg: 'Firebase config missing. Update firebaseConfig values first.' };
++      }
++      await addDoc(collection(db, 'unloan_plans'), {
++        ...payload,
++        createdAtServer: serverTimestamp()
++      });
++      return { ok: true };
+     }
+ 
+-    function resetApp() { 
+-        goToPage('page-login'); 
++    async function fetchPlansFromFirebase() {
++      if (!db) {
++        return { ok: false, msg: 'Firebase config missing. Update firebaseConfig values first.', data: [] };
++      }
++      const q = query(collection(db, 'unloan_plans'), orderBy('createdAt', 'desc'));
++      const snap = await getDocs(q);
++      const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
++      return { ok: true, data: rows };
+     }
+ 
+-    // --- EDIT MODE LOGIC ---
+-    function toggleEditMode() {
+-        isEditMode = !isEditMode;
+-        updateEditModeUI(isEditMode);
++    window.unloanFirebase = {
++      ready: !!db,
++      savePlanToFirebase,
++      fetchPlansFromFirebase
++    };
++  </script>
++
++  <script>
++    const ADMIN_USERNAME = 'admin';
++    const ADMIN_PASSWORD = 'admin123';
++
++    const milestoneDefs = [
++      { key: 'health', name: 'Health Emergency Fund', avg: 300000, years: 2 },
++      { key: 'marriage', name: 'Marriage / Wedding', avg: 1200000, years: 5 },
++      { key: 'car', name: 'Car Purchase', avg: 800000, years: 4 },
++      { key: 'home', name: 'Home Downpayment', avg: 2500000, years: 8 },
++      { key: 'education', name: 'Child Education', avg: 1500000, years: 12 }
++    ];
++
++    let currentMode = 'monthly';
++    let user = {};
++    let chart = null;
++
++    function inr(n) { return `₹${Math.round(n).toLocaleString('en-IN')}`; }
++    function normalize(v) { return currentMode === 'yearly' ? (Number(v || 0) / 12) : Number(v || 0); }
++
++    function goTo(id) {
++      document.querySelectorAll('main section').forEach((s) => s.classList.add('hidden-page'));
++      document.getElementById(id).classList.remove('hidden-page');
++      window.scrollTo({ top: 0, behavior: 'smooth' });
+     }
+ 
+-    function updateEditModeUI(active) {
+-        const btnText = document.getElementById('editBtnText');
+-        const btnIcon = document.querySelector('#editToggleBtn i');
+-        const allInputs = document.querySelectorAll('#page-financials input, #page-financials select');
+-
+-        if (active) {
+-            btnText.innerText = "Done Editing";
+-            btnIcon.className = "fa-solid fa-check";
+-            document.getElementById('editToggleBtn').classList.replace('bg-white', 'bg-indigo-600');
+-            document.getElementById('editToggleBtn').classList.replace('text-gray-700', 'text-white');
+-            document.getElementById('editToggleBtn').classList.replace('border-gray-300', 'border-indigo-600');
+-            
+-            allInputs.forEach(input => {
+-                input.removeAttribute('readonly');
+-                input.classList.remove('bg-gray-100', 'bg-gray-50', 'cursor-not-allowed');
+-                input.classList.add('bg-white', 'ring-1', 'ring-indigo-200');
+-            });
+-        } else {
+-            btnText.innerText = "Edit Inputs";
+-            btnIcon.className = "fa-solid fa-pen-to-square";
+-            document.getElementById('editToggleBtn').classList.replace('bg-indigo-600', 'bg-white');
+-            document.getElementById('editToggleBtn').classList.replace('text-white', 'text-gray-700');
+-            document.getElementById('editToggleBtn').classList.replace('border-indigo-600', 'border-gray-300');
+-
+-            allInputs.forEach(input => {
+-                input.setAttribute('readonly', 'true');
+-                input.classList.add('bg-gray-100', 'bg-gray-50', 'cursor-not-allowed');
+-                input.classList.remove('bg-white', 'ring-1', 'ring-indigo-200');
+-            });
+-            
+-            ['car', 'home', 'edu', 'marriage', 'retire'].forEach(g => updateMilestoneUI(`ms-${g}`));
+-        }
++    function resetApp() {
++      document.getElementById('entryForm').reset();
++      user = {};
++      goTo('page-entry');
+     }
+ 
+-    function toggleMilestone(id) {
+-        const checkbox = document.getElementById(id);
+-        checkbox.checked = !checkbox.checked;
+-        updateMilestoneUI(id);
++    function setMode(mode) {
++      currentMode = mode;
++      document.querySelectorAll('.mode-label').forEach((el) => {
++        el.textContent = mode === 'yearly' ? 'per year' : 'per month';
++      });
+     }
+ 
+-    function updateMilestoneUI(id) {
+-        const checkbox = document.getElementById(id);
+-        const inputsDiv = document.querySelector(`.${id}-inputs`);
+-        const checkIcon = checkbox.parentElement.querySelector('.check-icon');
+-        
+-        if (checkbox.checked) {
+-            inputsDiv.classList.remove('opacity-0', 'pointer-events-none');
+-            checkIcon.classList.remove('opacity-0', 'transform', 'scale-50');
+-            
+-            const inputs = inputsDiv.querySelectorAll('input');
+-            inputs.forEach(inp => {
+-                if(!isEditMode) {
+-                    inp.setAttribute('readonly', true);
+-                    inp.classList.add('bg-gray-50');
+-                    inp.classList.remove('bg-white');
+-                } else {
+-                    inp.removeAttribute('readonly');
+-                    inp.classList.remove('bg-gray-50');
+-                    inp.classList.add('bg-white');
+-                }
+-            });
+-        } else {
+-            inputsDiv.classList.add('opacity-0', 'pointer-events-none');
+-            checkIcon.classList.add('opacity-0', 'transform', 'scale-50');
+-        }
++    function renderMilestones() {
++      const box = document.getElementById('milestonesBox');
++      box.innerHTML = milestoneDefs.map((m) => `
++        <div class="border rounded-lg p-3">
++          <label class="font-medium text-sm inline-flex items-center gap-2"><input id="use-${m.key}" type="checkbox" checked /> ${m.name}</label>
++          <div class="grid grid-cols-2 gap-2 mt-2">
++            <input id="amt-${m.key}" type="number" min="0" value="${m.avg}" class="border rounded p-2 text-sm" />
++            <input id="yr-${m.key}" type="number" min="1" value="${m.years}" class="border rounded p-2 text-sm" />
++          </div>
++          <p class="text-xs text-gray-500 mt-1">National avg marker: ${inr(m.avg)}</p>
++        </div>`).join('');
+     }
+ 
++    function getSelectedMilestones() {
++      return milestoneDefs
++        .filter((m) => document.getElementById(`use-${m.key}`).checked)
++        .map((m) => ({
++          key: m.key,
++          name: m.name,
++          amount: Number(document.getElementById(`amt-${m.key}`).value || 0),
++          years: Number(document.getElementById(`yr-${m.key}`).value || 1),
++          avg: m.avg
++        }));
++    }
++
++    document.getElementById('entryForm').addEventListener('submit', (e) => {
++      e.preventDefault();
++      user = {
++        name: document.getElementById('name').value.trim(),
++        age: Number(document.getElementById('age').value),
++        mobile: document.getElementById('mobile').value.trim(),
++        dependents: Number(document.getElementById('dependents').value || 0),
++        maritalStatus: document.getElementById('maritalStatus').value
++      };
++      goTo('page-financial');
++    });
++
++    document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
++      e.preventDefault();
++      const u = document.getElementById('adminUser').value.trim();
++      const p = document.getElementById('adminPass').value;
++      if (u !== ADMIN_USERNAME || p !== ADMIN_PASSWORD) {
++        alert('Invalid admin credentials.');
++        return;
++      }
++      loadAdminDashboard();
++    });
++
+     function generatePlan() {
+-        const income = parseFloat(document.getElementById('monthlyIncome').value) || 0;
+-        const expRent = parseFloat(document.getElementById('expRent').value) || 0;
+-        const expFood = parseFloat(document.getElementById('expFood').value) || 0;
+-        const expMisc = parseFloat(document.getElementById('expMisc').value) || 0;
+-        const totalExpenses = expRent + expFood + expMisc;
+-        const surplus = income - totalExpenses;
+-
+-        if(surplus <= 0) { alert("Expenses exceed income! Please edit inputs."); return; }
+-
+-        const milestones = [];
+-        const goalIds = ['car', 'home', 'edu', 'marriage', 'retire'];
+-        let activeGoalsCount = 0;
+-
+-        goalIds.forEach(g => {
+-            if(document.getElementById(`ms-${g}`).checked) {
+-                activeGoalsCount++;
+-                milestones.push({ name: g.toUpperCase(), amount: parseFloat(document.getElementById(`val-${g}`).value), years: parseFloat(document.getElementById(`yr-${g}`).value) });
+-            }
+-        });
+-
+-        userData.income = income;
+-        userData.surplus = surplus;
+-        userData.milestones = milestones;
+-        userData.goalsCount = activeGoalsCount;
+-        renderSummary();
+-        goToPage('page-summary');
++      const income = normalize(document.getElementById('income').value);
++      const rent = normalize(document.getElementById('rent').value);
++      const food = normalize(document.getElementById('food').value);
++      const misc = normalize(document.getElementById('misc').value);
++      const surplus = income - (rent + food + misc);
++
++      if (!user.name) return alert('Please complete entry page first.');
++      if (income <= 0) return alert('Please enter valid income.');
++      if (surplus <= 0) return alert('Expenses exceed income. Update values.');
++
++      const milestones = getSelectedMilestones();
++      const shortGoals = milestones.filter((m) => m.years <= 5);
++      const longGoals = milestones.filter((m) => m.years > 5);
++
++      const insuranceAlloc = Math.max(surplus * 0.25, 3000 + user.dependents * 700);
++      const remaining = Math.max(surplus - insuranceAlloc, 0);
++      const shortWeight = shortGoals.reduce((s, g) => s + g.amount, 0);
++      const longWeight = longGoals.reduce((s, g) => s + g.amount, 0);
++      const totalWeight = shortWeight + longWeight || 1;
++      const shortAlloc = remaining * (shortWeight / totalWeight);
++      const longAlloc = remaining * (longWeight / totalWeight);
++
++      user.financial = {
++        inputMode: currentMode,
++        incomeMonthly: income,
++        expensesMonthly: { rent, food, misc },
++        surplusMonthly: surplus,
++        milestones,
++        allocation: { insuranceAlloc, shortAlloc, longAlloc }
++      };
++
++      renderSummary(shortGoals, longGoals);
++      goTo('page-summary');
+     }
+ 
+-    function renderSummary() {
+-        document.getElementById('display-name').innerText = userData.name;
+-        document.getElementById('display-surplus').innerText = `₹${userData.surplus.toLocaleString()}`;
+-        document.getElementById('ai-age').innerText = userData.age;
+-        document.getElementById('ai-goals-count').innerText = userData.goalsCount;
+-
+-        const insuranceAmt = Math.max(userData.surplus * 0.10, 5000);
+-        const remaining = userData.surplus - insuranceAmt;
+-        let shortTermTotal = 0, longTermTotal = 0;
+-        userData.milestones.forEach(m => { if(m.years <= 5) shortTermTotal += m.amount; else longTermTotal += m.amount; });
+-        
+-        const totalGoalValue = shortTermTotal + longTermTotal;
+-        let shortAlloc = 0, longAlloc = 0;
+-        if(totalGoalValue > 0) {
+-            shortAlloc = remaining * (shortTermTotal / totalGoalValue);
+-            longAlloc = remaining * (longTermTotal / totalGoalValue);
+-        } else { shortAlloc = remaining * 0.4; longAlloc = remaining * 0.5; }
+-
+-        document.getElementById('list-important').innerHTML = `<li><strong>Term Plan:</strong> Cover ₹${(userData.income*12*15).toLocaleString()}</li><li><strong>Health:</strong> Family Floater ₹10L</li><li><strong>Cost:</strong> ₹${Math.floor(insuranceAmt)}/mo</li>`;
+-        
+-        const shortList = document.getElementById('list-short');
+-        shortList.innerHTML = userData.milestones.filter(m=>m.years<=5).map(m => `<li><strong>${m.name}:</strong> Target ₹${m.amount.toLocaleString()} in ${m.years}yrs</li>`).join('') || '<li>No short term goals.</li>';
+-        if(shortAlloc > 0) shortList.innerHTML += `<li class="font-bold text-indigo-600 mt-2">Invest: ₹${Math.floor(shortAlloc)}/mo</li>`;
+-
+-        const longList = document.getElementById('list-long');
+-        longList.innerHTML = userData.milestones.filter(m=>m.years>5).map(m => `<li><strong>${m.name}:</strong> Target ₹${m.amount.toLocaleString()} in ${m.years}yrs</li>`).join('') || '<li>No long term goals.</li>';
+-        if(longAlloc > 0) longList.innerHTML += `<li class="font-bold text-indigo-600 mt-2">Invest: ₹${Math.floor(longAlloc)}/mo</li>`;
+-
+-        renderChart([insuranceAmt, shortAlloc, longAlloc]);
++    function renderSummary(shortGoals, longGoals) {
++      const f = user.financial;
++      const insuranceCover = f.incomeMonthly * 12 * 12;
++      document.getElementById('sName').textContent = user.name;
++      document.getElementById('sSurplus').textContent = inr(f.surplusMonthly);
++
++      document.getElementById('importantList').innerHTML = `
++        <li>Term cover target: <b>${inr(insuranceCover)}</b> (~12x annual income).</li>
++        <li>Health insurance: <b>${inr(1000000 + user.dependents * 200000)}</b> family floater recommended.</li>
++        <li>Suggested monthly insurance budget: <b>${inr(f.allocation.insuranceAlloc)}</b>.</li>`;
++
++      document.getElementById('shortList').innerHTML = (shortGoals.map((g) => `<li>${g.name}: ${inr(g.amount)} in ${g.years} yrs.</li>`).join('') || '<li>No short-term milestone selected.</li>') + `<li class="font-semibold text-indigo-700">Invest ${inr(f.allocation.shortAlloc)}/month in short-term debt/hybrid funds.</li>`;
++
++      document.getElementById('longList').innerHTML = (longGoals.map((g) => `<li>${g.name}: ${inr(g.amount)} in ${g.years} yrs.</li>`).join('') || '<li>No long-term milestone selected.</li>') + `<li class="font-semibold text-indigo-700">Invest ${inr(f.allocation.longAlloc)}/month in equity-oriented SIPs/PPF/NPS mix.</li>`;
++
++      const avgIndianSavingsRate = 0.30;
++      const noteItems = [
++        `Your savings ratio is ${((f.surplusMonthly / f.incomeMonthly) * 100).toFixed(1)}%. National household financial savings often range around 20–30%.`,
++        `Insurance allocation is ${((f.allocation.insuranceAlloc / f.surplusMonthly) * 100).toFixed(1)}% of surplus. Increase if family/dependents are high.`,
++        `For goals above 7 years, equity SIP exposure can help beat inflation (~6%).`
++      ];
++      document.getElementById('aiNotes').innerHTML = noteItems.map((n) => `<li>• ${n}</li>`).join('');
++
++      document.getElementById('refs').innerHTML = [
++        `Emergency fund benchmark: 6 months of expenses (commonly recommended by Indian personal-finance advisors).`,
++        `Term insurance thumb rule: 10x–15x yearly income for income replacement.`,
++        `Long-term inflation assumption used: ~6% p.a. for planning milestones.`,
++        `Target savings benchmark shown vs ${Math.round(avgIndianSavingsRate * 100)}% indicative savings ratio.`
++      ].map((r) => `<li>${r}</li>`).join('');
++
++      renderChart(f.allocation);
+     }
+ 
+-    function renderChart(amounts) {
+-        const ctx = document.getElementById('wealthChart').getContext('2d');
+-        if(chartInstance) chartInstance.destroy();
+-        chartInstance = new Chart(ctx, {
+-            type: 'doughnut',
+-             {
+-                labels: ['Insurance', 'Short Term Goals', 'Long Term Wealth'],
+-                datasets: [{  amounts, backgroundColor: ['#EF4444', '#F59E0B', '#10B981'], borderWidth: 0 }]
+-            },
+-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+-        });
++    function renderChart(a) {
++      const ctx = document.getElementById('allocationChart').getContext('2d');
++      if (chart) chart.destroy();
++      chart = new Chart(ctx, {
++        type: 'doughnut',
++        data: {
++          labels: ['Insurance', 'Milestones (Short)', 'Wealth Creators (Long)'],
++          datasets: [{
++            data: [a.insuranceAlloc, a.shortAlloc, a.longAlloc],
++            backgroundColor: ['#ef4444', '#f59e0b', '#10b981']
++          }]
++        },
++        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
++      });
+     }
+ 
+-    async function submitFinal() {
+-        const btn = document.getElementById('submitBtn');
+-        const loader = document.getElementById('loader');
+-        const txt = document.getElementById('btnText');
+-        
+-        btn.disabled = true;
+-        loader.style.display = 'block';
+-        txt.innerText = 'Saving...';
+-
+-        userData.consult = document.getElementById('consultCheck').checked;
+-        userData.date = new Date().toLocaleDateString();
+-
+-        if (typeof window.submitToFirebase !== 'function') {
+-            alert("Firebase not initialized. Check console.");
+-            btn.disabled = false;
+-            loader.style.display = 'none';
+-            txt.innerText = 'Save & Submit Plan';
+-            return;
+-        }
++    async function savePlan() {
++      if (!user.financial) return alert('Generate a plan first.');
++      const btn = document.getElementById('savePlanBtn');
++      btn.disabled = true;
++      btn.textContent = 'Saving...';
+ 
+-        const success = await window.submitToFirebase(userData);
++      user.consult = document.getElementById('consultCheck').checked;
++      user.createdAt = new Date().toISOString();
+ 
+-        if(success) {
+-            alert("Plan Saved to Cloud! Our advisors will contact you.");
+-            resetApp();
+-        } else {
+-            btn.disabled = false;
+-            loader.style.display = 'none';
+-            txt.innerText = 'Save & Submit Plan';
+-            alert("Failed to save. Check your Firebase configuration in the code.");
++      const all = JSON.parse(localStorage.getItem('unloanPlans') || '[]');
++      all.push(user);
++      localStorage.setItem('unloanPlans', JSON.stringify(all));
++
++      let cloudMsg = 'Saved locally.';
++      try {
++        if (window.unloanFirebase) {
++          const cloud = await window.unloanFirebase.savePlanToFirebase(user);
++          cloudMsg = cloud.ok ? 'Saved to Firebase + local backup.' : cloud.msg;
+         }
++      } catch (err) {
++        cloudMsg = `Local save only. Firebase error: ${err.message}`;
++      }
++
++      alert(`Plan saved. ${cloudMsg}`);
++      btn.disabled = false;
++      btn.textContent = 'Save Plan';
++      showRecords();
+     }
+ 
+-    async function toggleAdmin() {
+-        const pass = prompt("Admin Password (admin):");
+-        if(pass === 'admin') showAdmin();
++    function showRecords() {
++      const rows = JSON.parse(localStorage.getItem('unloanPlans') || '[]');
++      const body = document.getElementById('recordsBody');
++      body.innerHTML = rows.length
++        ? rows.map((r) => `
++          <tr class="border-b">
++            <td class="py-2">${r.name}</td>
++            <td>${r.age}</td>
++            <td>${r.mobile}</td>
++            <td>${r.maritalStatus}</td>
++            <td>${r.dependents}</td>
++            <td>${inr(r.financial?.incomeMonthly || 0)}</td>
++            <td>${inr(r.financial?.surplusMonthly || 0)}</td>
++            <td>${r.consult ? 'Yes' : 'No'}</td>
++            <td>${new Date(r.createdAt).toLocaleDateString('en-IN')}</td>
++          </tr>`).join('')
++        : '<tr><td colspan="9" class="py-3 text-center text-gray-500">No saved records yet.</td></tr>';
++      goTo('page-records');
+     }
+ 
+-    async function showAdmin() {
+-        const tbody = document.getElementById('admin-table-body');
+-        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Loading data from cloud...</td></tr>';
+-        goToPage('admin-page');
+-
+-        const dbData = await window.fetchFromFirebase();
+-        tbody.innerHTML = '';
+-
+-        if(dbData.length === 0) {
+-            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4">No data found in database.</td></tr>';
+-        } else {
+-            dbData.forEach(row => {
+-                const goals = row.milestones ? row.milestones.map(m=>m.name).join(', ') : 'None';
+-                tbody.innerHTML += `
+-                    <tr class="border-b hover:bg-gray-50">
+-                        <td class="px-5 py-4 font-bold">${row.name}</td>
+-                        <td class="px-5 py-4">${row.age}</td>
+-                        <td class="px-5 py-4">${row.mobile}</td>
+-                        <td class="px-5 py-4">₹${row.income}</td>
+-                        <td class="px-5 py-4 text-xs text-gray-500">${goals}</td>
+-                        <td class="px-5 py-4">${row.consult ? '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Yes</span>' : 'No'}</td>
+-                        <td class="px-5 py-4 text-xs">${row.date}</td>
+-                    </tr>
+-                `;
+-            });
+-        }
++    async function loadAdminDashboard() {
++      goTo('page-admin');
++      const body = document.getElementById('adminBody');
++      const status = document.getElementById('adminStatus');
++      body.innerHTML = '';
++
++      if (!window.unloanFirebase) {
++        status.textContent = 'Firebase module not loaded.';
++        return;
++      }
++
++      const result = await window.unloanFirebase.fetchPlansFromFirebase();
++      if (!result.ok) {
++        status.textContent = result.msg;
++        return;
++      }
++
++      if (!result.data.length) {
++        status.textContent = 'Connected to Firebase. No plan data yet.';
++        body.innerHTML = '<tr><td colspan="10" class="py-3 text-center text-gray-500">No records.</td></tr>';
++        return;
++      }
++
++      status.textContent = `Connected to Firebase. Showing ${result.data.length} records.`;
++      body.innerHTML = result.data.map((r) => {
++        const ms = (r.financial?.milestones || []).map((m) => m.name).join(', ') || 'None';
++        return `<tr class="border-b">
++          <td class="py-2">${r.name || '-'}</td>
++          <td>${r.age || '-'}</td>
++          <td>${r.mobile || '-'}</td>
++          <td>${r.maritalStatus || '-'}</td>
++          <td>${r.dependents ?? '-'}</td>
++          <td>${inr(r.financial?.incomeMonthly || 0)}</td>
++          <td>${inr(r.financial?.surplusMonthly || 0)}</td>
++          <td>${r.consult ? 'Yes' : 'No'}</td>
++          <td>${r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN') : '-'}</td>
++          <td>${ms}</td>
++        </tr>`;
++      }).join('');
+     }
+ 
+-    async function downloadCSV() {
+-        const dbData = await window.fetchFromFirebase();
+-        if(!dbData.length) return alert("No data");
+-        let csv = "Name,Age,Mobile,Income,Goals,Consult,Date\n";
+-        dbData.forEach(r => {
+-            const goals = r.milestones ? r.milestones.map(m=>m.name).join(';') : 'None';
+-            csv += `${r.name},${r.age},${r.mobile},${r.income},"${goals}",${r.consult},${r.date}\n`;
+-        });
+-        const link = document.createElement("a");
+-        link.href = encodeURI("text/csv;charset=utf-8," + csv);
+-        link.download = "unloan_cloud_data.csv";
+-        link.click();
+-    }
+-</script>
++    renderMilestones();
++  </script>
++</body>
++</html>
+ 
+EOF
+)
